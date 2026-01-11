@@ -10,6 +10,8 @@ export class AddressQueryService {
     '-': '之',
     '~': '之',
     台: '臺',
+    '○': '0',
+    '０': '0',
     '１': '1',
     '２': '2',
     '３': '3',
@@ -19,7 +21,6 @@ export class AddressQueryService {
     '７': '7',
     '８': '8',
     '９': '9',
-    '０': '0',
   };
 
   constructor(engine: AddressSearchEngineOptimized, part2Data: Part2Entry[]) {
