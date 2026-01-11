@@ -5,6 +5,7 @@
   "scripts": {
     "copy-data": "cp ../zipcodetw/data/* public/data/",
     "build": "bun build ./src/index.ts --outdir ./public",
+    "start": "bunx serve ./public",
     "dev": "bun build ./src/index.ts --outdir ./public --watch"
   },
   "dependencies": {
