@@ -1,15 +1,14 @@
 {
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "devDependencies": {
     "@biomejs/biome": "2.3.11",
     "@types/bun": "latest",
-    "@types/node": "^25.0.3",
-    "chevrotain": "^11.1.0",
-    "jimp": "^1.6.0"
+    "@types/node": "^25.0.3"
   },
   "scripts": {
-    "download": "bun scripts/crawler/download.ts",
-    "build:data": "bun scripts/build_data_files.ts",
     "lint": "biome check",
     "format": "biome format --write"
   }

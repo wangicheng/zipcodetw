@@ -1,0 +1,16 @@
+{
+  "name": "zipcodetw-demo",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "copy-data": "cp ../zipcodetw/data/* public/data/",
+    "build": "bun build ./src/index.ts --outdir ./public",
+    "dev": "bun build ./src/index.ts --outdir ./public --watch"
+  },
+  "dependencies": {
+    "zipcodetw": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

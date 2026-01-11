@@ -1,0 +1,20 @@
+{
+  "name": "zipcodetw",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./node": "./src/node.ts"
+  },
+  "scripts": {
+    "download": "bun scripts/crawler/download.ts",
+    "build:data": "bun scripts/build_data_files.ts",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "chevrotain": "^11.1.0",
+    "jimp": "^1.6.0",
+    "@types/bun": "latest"
+  }
+}

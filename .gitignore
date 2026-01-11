@@ -33,7 +33,11 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Finder (MacOS) folder config
 .DS_Store
 
-# zipcode raw data
-data/**
-!data/address_prefixes.txt.gz
-!data/zipcode_rules.json.gz
+# zipcode raw data & generated assets
+packages/zipcodetw/data/**
+!packages/zipcodetw/data/address_prefixes.txt.gz
+!packages/zipcodetw/data/zipcode_rules.json.gz
+
+# demo public assets (generated)
+packages/demo/public/index.js
+packages/demo/public/data/
