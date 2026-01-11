@@ -1,0 +1,57 @@
+name: Deploy Demo to GitHub Pages
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Daily at midnight UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Download Data
+        working-directory: packages/zipcodetw
+        run: bun run download
+
+      - name: Build Data Files
+        working-directory: packages/zipcodetw
+        run: bun run build:data
+
+      - name: Create Demo Data Directory
+        run: mkdir -p packages/demo/public/data
+
+      - name: Build Demo
+        working-directory: packages/demo
+        run: |
+          bun run copy-data
+          bun run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'packages/demo/public'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
