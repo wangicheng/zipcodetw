@@ -29,7 +29,7 @@ export class AddressQueryService {
   }
 
   public search(searchInput: string, threshold: number = 1000): SearchMatch[] {
-    const normalizedInput = searchInput.replace(/[-~台０-９]/g, (m) => AddressQueryService.PART1_MAP[m]);
+    const normalizedInput = searchInput.replace(/[-~台○０-９]/g, (m) => AddressQueryService.PART1_MAP[m]);
     const allMatches: SearchMatch[] = [];
     const matchedEntries = new Set<number>();
 
