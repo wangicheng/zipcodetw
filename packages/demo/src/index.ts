@@ -7,7 +7,10 @@ const init = async () => {
 
   const container = document.createElement('div');
   container.innerHTML = `
-        <h1>ZipCodeTw Demo</h1>
+        <div class="header">
+            <h1>ZipCodeTw Demo</h1>
+            <a href="https://github.com/wangicheng/zipcodetw" target="_blank" class="github-link">GitHub</a>
+        </div>
         <p>正在載入資料...</p>
     `;
   app.appendChild(container);
@@ -19,7 +22,10 @@ const init = async () => {
     console.timeEnd('Init ZipCodeTw');
 
     container.innerHTML = `
-            <h1>ZipCodeTw Demo</h1>
+            <div class="header">
+                <h1>ZipCodeTw Demo</h1>
+                <a href="https://github.com/wangicheng/zipcodetw" target="_blank" class="github-link">GitHub</a>
+            </div>
             <p>資料載入完成！請輸入地址查詢。</p>
             <input type="text" id="addressInput" placeholder="輸入地址 ex: 台北市大安區..." style="width: 100%; padding: 12px; font-size: 16px; box-sizing: border-box;">
             <div id="results" style="margin-top: 20px;"></div>

@@ -36,6 +36,34 @@
         background-color: var(--bg-color);
         color: var(--text-color);
       }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 15px;
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 1.8rem;
+      }
+      .github-link {
+        font-size: 0.9rem;
+        text-decoration: none;
+        padding: 6px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--text-color);
+        transition: all 0.2s;
+      }
+      .github-link:hover {
+        border-color: var(--link-color);
+        color: var(--link-color);
+      }
+      a {
+        color: var(--link-color);
+      }
       .result-item {
         border-bottom: 1px solid var(--border-color);
         padding: 8px 0;
