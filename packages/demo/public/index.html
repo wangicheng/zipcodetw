@@ -1,17 +1,59 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
     <title>ZipCodeTw Demo</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
-        .result-item { border-bottom: 1px solid #eee; padding: 8px 0; }
-        .zipcode { font-weight: bold; color: #007bff; margin-right: 10px; }
+      :root {
+        --bg-color: #ffffff;
+        --text-color: #212529;
+        --border-color: #dee2e6;
+        --link-color: #007bff;
+        --input-bg: #ffffff;
+        --input-border: #ced4da;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg-color: #121212;
+          --text-color: #e0e0e0;
+          --border-color: #333333;
+          --link-color: #4da3ff;
+          --input-bg: #2d2d2d;
+          --input-border: #444444;
+        }
+      }
+      html {
+        scrollbar-gutter: stable;
+      }
+      body {
+        font-family: sans-serif;
+        padding: 20px;
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+      }
+      .result-item {
+        border-bottom: 1px solid var(--border-color);
+        padding: 8px 0;
+      }
+      .zipcode {
+        font-weight: bold;
+        color: var(--link-color);
+        margin-right: 10px;
+        cursor: pointer;
+      }
+      input {
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        border: 1px solid var(--input-border);
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div id="app"></div>
     <script src="index.js" type="module"></script>
-</body>
+  </body>
 </html>
