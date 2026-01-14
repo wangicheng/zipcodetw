@@ -60,7 +60,7 @@ const init = async () => {
         const startTime = performance.now();
         const matches = zipCodeTw.search(query);
         const endTime = performance.now();
-        const duration = (endTime - startTime).toFixed(3);
+        const duration = (endTime - startTime).toFixed(1);
 
         // Limit results to top 50 for performance in UI
         const displayMatches = matches.slice(0, 50);
