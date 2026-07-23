@@ -34,12 +34,8 @@ export function matchAddress(address: number[], rules: AddressRule[]): boolean {
     const targetLen = getConditionLength(rule);
 
     if (targetLen > 0) {
-      // Loose match if insufficient remaining address
-      if (addrIdx + targetLen > address.length) {
-        return true;
-      }
-
-      const targetSlice = address.slice(addrIdx, addrIdx + targetLen);
+      const availableLen = Math.min(targetLen, address.length - addrIdx);
+      const targetSlice = address.slice(addrIdx, addrIdx + availableLen);
 
       // Check parity
       if (rule.parity) {
@@ -55,7 +51,7 @@ export function matchAddress(address: number[], rules: AddressRule[]): boolean {
       // Check max value
       if (rule.max && compare(targetSlice, rule.max) > 0) return false;
 
-      addrIdx += targetLen;
+      addrIdx += availableLen;
     }
   }
 

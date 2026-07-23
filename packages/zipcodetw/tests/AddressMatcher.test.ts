@@ -53,4 +53,13 @@ describe('AddressMatcher', () => {
     const rules: AddressRule[] = [{ value: [1] }, { value: [2] }];
     expect(matchAddress([1], rules)).toBe(true);
   });
+
+  test('should correctly validate shorter input address against multi-level min/max rules', () => {
+    // Rule with sub-number max: e.g. 15至19之3 (min: [15], max: [19, 3])
+    const rules: AddressRule[] = [{ min: [15], max: [19, 3], parity: 'odd' }];
+    expect(matchAddress([15], rules)).toBe(true);
+    expect(matchAddress([19], rules)).toBe(true);
+    expect(matchAddress([157], rules)).toBe(false); // 157 > 19, should fail max check
+    expect(matchAddress([13], rules)).toBe(false); // 13 < 15, should fail min check
+  });
 });
