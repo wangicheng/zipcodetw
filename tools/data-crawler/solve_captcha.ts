@@ -10,7 +10,6 @@ const CONFIG = {
   MIN_CONFIDENCE: 0.85,
 };
 
-// 這裡填入透過轉換工具生成的 Hex 字串
 const TEMPLATES_HEX: Record<string, string> = {
   '0': '007f0001ffc003ffe007c1f00f00781e007c1e003c3c001e3c001e3c001e3c001e78000f78000f78000f78000f78000f78000f78000f78000f78000f78000f78000f78000f3c001e3c001e3c001e3c001e1e003c1e007c0f007807c1f003ffe001ffc0007f00',
   '1': '000000007e0007fe001ffe001f9e00181e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e00001e000ffffc0ffffc0ffffc',
@@ -70,7 +69,7 @@ export async function recognizeCaptcha(source: string | Buffer): Promise<string>
   }
 }
 
-function extractFeatureMatrix(image, startX: number, startY: number, w: number, h: number): number[] {
+function extractFeatureMatrix(image: any, startX: number, startY: number, w: number, h: number): number[] {
   const matrix: number[] = [];
   const bitmap = image.bitmap;
 

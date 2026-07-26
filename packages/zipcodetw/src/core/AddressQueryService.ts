@@ -1,35 +1,31 @@
 import { matchAddress } from './AddressMatcher.ts';
 import type { AddressSearchEngineOptimized } from './AddressSearchEngine.ts';
+import type { AddressNormalizer } from './normalizer/AddressNormalizer.ts';
+import { DefaultAddressNormalizer } from './normalizer/AddressNormalizer.ts';
+import type { AddressRanker } from './ranker/AddressRanker.ts';
+import { PostalDeliveryRanker } from './ranker/AddressRanker.ts';
 import type { Part2Entry, SearchMatch } from './types.ts';
 
 export class AddressQueryService {
   private engine: AddressSearchEngineOptimized;
   private part2Data: Part2Entry[];
+  private normalizer: AddressNormalizer;
+  private ranker: AddressRanker;
 
-  private static readonly PART1_MAP: Record<string, string> = {
-    '-': '之',
-    '~': '之',
-    台: '臺',
-    '○': '0',
-    '０': '0',
-    '１': '1',
-    '２': '2',
-    '３': '3',
-    '４': '4',
-    '５': '5',
-    '６': '6',
-    '７': '7',
-    '８': '8',
-    '９': '9',
-  };
-
-  constructor(engine: AddressSearchEngineOptimized, part2Data: Part2Entry[]) {
+  constructor(
+    engine: AddressSearchEngineOptimized,
+    part2Data: Part2Entry[],
+    normalizer: AddressNormalizer = new DefaultAddressNormalizer(),
+    ranker: AddressRanker = new PostalDeliveryRanker()
+  ) {
     this.engine = engine;
     this.part2Data = part2Data;
+    this.normalizer = normalizer;
+    this.ranker = ranker;
   }
 
   public search(searchInput: string, threshold: number = 1000): SearchMatch[] {
-    const normalizedInput = searchInput.replace(/[-~台○０-９]/g, (m) => AddressQueryService.PART1_MAP[m]);
+    const normalizedInput = this.normalizer.normalize(searchInput);
     const allMatches: SearchMatch[] = [];
     const matchedEntries = new Set<number>();
 
@@ -46,8 +42,8 @@ export class AddressQueryService {
 
       if (!(part2 === '' || (!isDigit(lastChar) && isDigit(nextChar)) || (!isChiNum(lastChar) && isChiNum(nextChar)))) continue;
 
-      const part1Converted = this.convertPart1Digits(part1).trim();
-      const part2Converted = this.convertPart2Digits(part2).trim();
+      const part1Converted = this.normalizer.convertPart1(part1);
+      const part2Converted = this.normalizer.convertPart2(part2);
 
       const matches = this.engine.search(part1Converted);
 
@@ -78,7 +74,7 @@ export class AddressQueryService {
           }
         }
 
-        this.sortMatches(splitMatches);
+        this.ranker.rank(splitMatches);
 
         if (splitIndex === normalizedInput.length) {
           splitMatches.reverse();
@@ -131,71 +127,13 @@ export class AddressQueryService {
           scale /= 10000;
         }
       } else if (rule.min?.length > 0 || rule.max?.length > 0) {
-        // Use the first element of min/max for size calculation as a heuristic
         const min = rule.min?.length > 0 ? rule.min[0] : 1;
         const max = rule.max?.length > 0 ? rule.max[0] : 5000;
         const diff = (max - min) / (rule.parity ? 2 : 1) + 1;
         size += (diff > 0 ? diff : 1) * scale;
-        scale /= 10000; // Penalty for open/unknown ranges
+        scale /= 10000;
       }
     }
     return size;
-  }
-
-  private sortMatches(matches: SearchMatch[]): void {
-    // 這個函數沒有唯一的正確答案，可以根據需求調整排序邏輯
-    matches.sort((a, b) => {
-      // 1. Longest Prefix First
-      if (a.part1.length !== b.part1.length) {
-        return b.part1.length - a.part1.length;
-      }
-      // 2. More rules (deeper specificity) First
-      const rcA = a.ruleCount ?? 0;
-      const rcB = b.ruleCount ?? 0;
-      if (rcA !== rcB) {
-        return rcB - rcA;
-      }
-      // 3. Smaller Range First
-      const rsA = a.rangeSize ?? Number.MAX_VALUE;
-      const rsB = b.rangeSize ?? Number.MAX_VALUE;
-      return rsA - rsB;
-    });
-  }
-
-  private convertPart1Digits(text: string): string {
-    return text.replace(/\d+/g, (match) => {
-      const num = parseInt(match, 10);
-      if (num >= 1 && num <= 99) {
-        if (num === 10) return '十';
-        const numMap = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
-        if (num < 10) return numMap[num];
-        const tens = Math.floor(num / 10);
-        const units = num % 10;
-        const tensStr = tens === 1 ? '十' : `${numMap[tens]}十`;
-        const unitsStr = units === 0 ? '' : numMap[units];
-        return tensStr + unitsStr;
-      }
-      return match.replace(/[0-9]/g, (d) => '零一二三四五六七八九'[parseInt(d, 10)]);
-    });
-  }
-
-  private convertPart2Digits(text: string): string {
-    return text.replace(/[一二三四五六七八九十]+/g, (match) => {
-      const map: Record<string, number> = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 };
-      let num = 0;
-      if (match.length === 1) num = map[match] || 0;
-      else if (match.startsWith('十')) num = 10 + (map[match[1]] || 0);
-      else if (match.endsWith('十')) num = (map[match[0]] || 0) * 10;
-      else if (match.includes('十')) {
-        const parts = match.split('十');
-        num = (map[parts[0]] || 0) * 10 + (map[parts[1]] || 0);
-      } else {
-        num = match
-          .split('')
-          .map((ch) => map[ch] || 0)
-          .reduce((acc, v) => acc * 10 + v, 0);
-      }
-      return num === 0 ? match : ` ${num} `;
-    });
   }
 }

@@ -1,4 +1,12 @@
-import type { RawAddress } from '../../src/core/types';
+export interface RawAddress {
+  city: string;
+  district: string;
+  road: string;
+  section: string;
+  range: string;
+  bulkName: string;
+  zipcode: string;
+}
 
 const BASE_URL = 'https://www.post.gov.tw/post/internet/Postal/index.jsp?ID=208';
 

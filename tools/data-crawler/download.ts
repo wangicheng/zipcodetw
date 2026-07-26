@@ -1,6 +1,8 @@
-import { RAW_ADDRESSES_PATH } from '../../src/core/constants';
-import { recognizeCaptcha } from './solve_captcha';
-import { Downloader, getPageData } from './downloader';
+import path from 'node:path';
+import { Downloader, getPageData } from './downloader.ts';
+import { recognizeCaptcha } from './solve_captcha.ts';
+
+const targetPath = path.resolve(import.meta.dirname, '../../packages/zipcodetw/data/raw_addresses.json');
 
 console.log('Fetching page data...');
 const data = await getPageData();
@@ -28,7 +30,6 @@ const addresses = await downloader.download();
 
 console.log(`Converted ${addresses.length} addresses.`);
 
-// Save to workspace root
-await Bun.write(RAW_ADDRESSES_PATH, JSON.stringify(addresses));
+await Bun.write(targetPath, JSON.stringify(addresses));
 
-console.log(`Saved to ${RAW_ADDRESSES_PATH}`);
+console.log(`Saved to ${targetPath}`);

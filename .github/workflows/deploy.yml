@@ -30,9 +30,8 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      - name: Download Data
-        working-directory: packages/zipcodetw
-        run: bun run download
+      - name: Download Data (External Crawler Tool)
+        run: bun run tools/data-crawler/download.ts
 
       - name: Build Data Files
         working-directory: packages/zipcodetw
@@ -59,4 +58,3 @@ jobs:
         if: github.ref == 'refs/heads/main'
         id: deployment
         uses: actions/deploy-pages@v5
-
