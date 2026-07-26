@@ -7,21 +7,35 @@ import { ZipCodeTw, type ZipCodeTwOptions } from './ZipCodeTw.ts';
 
 const gunzip = promisify(zlib.gunzip);
 
-async function loadFile(filePath: string): Promise<string> {
-  try {
-    await fs.access(filePath);
-    return await fs.readFile(filePath, 'utf-8');
-  } catch {
-    const gzPath = `${filePath}.gz`;
-    try {
-      await fs.access(gzPath);
-      const buffer = await fs.readFile(gzPath);
-      const decompressed = await gunzip(buffer);
-      return decompressed.toString('utf-8');
-    } catch {
-      throw new Error(`File not found: ${filePath} (checked .gz also)`);
-    }
+import path from 'node:path';
+
+async function loadSingleFile(p: string): Promise<string> {
+  if (p.endsWith('.gz')) {
+    const buffer = await fs.readFile(p);
+    const decompressed = await gunzip(buffer);
+    return decompressed.toString('utf-8');
   }
+  return await fs.readFile(p, 'utf-8');
+}
+
+async function loadFile(filePath: string): Promise<string> {
+  const candidates = [
+    filePath,
+    `${filePath}.gz`,
+    path.resolve(import.meta.dirname, '../', filePath),
+    path.resolve(import.meta.dirname, '../', `${filePath}.gz`),
+    path.resolve(import.meta.dirname, '../data', path.basename(filePath)),
+    path.resolve(import.meta.dirname, '../data', `${path.basename(filePath)}.gz`),
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      await fs.access(candidate);
+      return await loadSingleFile(candidate);
+    } catch {}
+  }
+
+  throw new Error(`File not found: ${filePath} (checked candidates: ${candidates.join(', ')})`);
 }
 
 /**
