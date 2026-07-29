@@ -11,6 +11,11 @@
   },
   "scripts": {
     "lint": "biome check",
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "build:data": "bun --cwd packages/zipcodetw scripts/build_data_files.ts",
+    "build": "bun build:data && bun --cwd packages/demo build",
+    "dev": "bun --cwd packages/demo dev",
+    "test": "bun --cwd packages/zipcodetw test",
+    "tools:download": "bun tools/data-crawler/download.ts"
   }
 }

@@ -22,24 +22,65 @@ ZipCodeTw 是一個專為台灣地址設計的郵遞區號解析函式庫。它�
 - **🌐 雙端支援**：
   - **Browser**：支援純前端離線查詢，可透過 Web 伺服器 / CDN 標頭（Content-Encoding: br / gzip）輕鬆達成極小傳輸。
   - **Server**：支援 Node.js 與 Bun，適合高併發 API 服務。
-- **🛠️ 資料同步自動化**：
-  - 內建自動化資料獲取腳本（包含人機驗證處理機制），可隨時從官方來源同步最新數據。
+- **📦 高效資料建置**：
+  - 輸入結構化的原始地址 JSON 檔（`raw_addresses.json`），經由編譯命令自動轉譯產出極小化之 Front Coding 前綴檔與 AST 規則索引檔。
 
 
-## 📦 安裝與設置
+## 📦 資料建置與流程
 
-本專案採用 **Bun** 作為套件管理器。
+本專案採用 **Bun** 作為套件管理器。資料建置流程如下：
 
 ```bash
 # 1. 安裝相依套件
 bun install
 
-# 2. 下載最新郵遞區號資料 (自動化獲取官方最新資料)
-bun run download
+# 2. 準備原始地址 JSON 檔
+# 將符合格式的原始地址資料放置於 packages/zipcodetw/data/raw_addresses.json
 
-# 3. 建置資料檔 (產出至 packages/zipcodetw/data)
+# 3. 建置壓縮索引與規則檔 (產出 address_prefixes.txt 與 zipcode_rules.json)
 bun run build:data
 ```
+
+## 📄 原始地址資料規格 (raw_addresses.json)
+
+`raw_addresses.json` 為建置指令 `bun run build:data` 的唯一輸入介面，該 JSON 檔案須為 `RawAddress` 物件構成的陣列：
+
+### JSON 結構範例
+
+```json
+[
+  {
+    "city": "基隆市",
+    "district": "七堵區",
+    "road": "光明路",
+    "section": "0",
+    "range": "單  21號至  23號",
+    "bulkName": "行政大樓",
+    "zipcode": "206216"
+  },
+  {
+    "city": "臺北市",
+    "district": "大安區",
+    "road": "和平東路",
+    "section": "3",
+    "range": "全",
+    "bulkName": "",
+    "zipcode": "106008"
+  }
+]
+```
+
+### 欄位規格說明
+
+| 欄位名稱 (Field) | 型態 (Type) | 必填 | 說明與範例 |
+| :--- | :--- | :---: | :--- |
+| `city` | `string` | 是 | 縣市名稱（例：`"臺北市"`、`"基隆市"`） |
+| `district` | `string` | 是 | 鄉鎮市區名稱（例：`"大安區"`、`"七堵區"`） |
+| `road` | `string` | 是 | 路街名稱（例：`"和平東路"`、`"光明路"`） |
+| `section` | `string` | 是 | 段別（若無段別請固定填 `"0"`，例：`"3"` 或 `"0"`） |
+| `range` | `string` | 是 | 門牌投遞範圍規則描述（例：`"全"`、`"單  21號至  23號"`、`"雙 100號以下"`） |
+| `bulkName` | `string` | 是 | 大宗戶/機構/大樓名稱（若無則填空字串 `""`，例：`"行政大樓"`） |
+| `zipcode` | `string` | 是 | 6 碼郵遞區號字串（例：`"106008"`、`"206216"`） |
 
 ## 💻 快速上手
 
@@ -69,20 +110,22 @@ const result = zipCodeTw.search('新竹市東區科學園區力行路');
 
 ## 📂 專案結構
 
-- **packages/zipcodetw**
-  - 核心邏輯庫。
-  - `src/core`: 搜尋引擎、規則匹配器、資料型別。
-  - `src/utils`: Front Coding 編解碼工具。
-  - `scripts/crawler`: 資料來源同步與驗證處理模組。
-  - `scripts/utils`: 地址規則語法解析器。
-- **packages/demo**
-  - 使用 Vanilla TS 建置的靜態演示網站。
+```
+zipcodetw/
+└── packages/
+    ├── zipcodetw/           # [核心引擎庫] 搜尋引擎、Front Coding 與規則解析
+    │   ├── src/core/        # 核心搜尋與匹配邏輯
+    │   ├── src/utils/       # Front Coding 編解碼工具
+    │   ├── scripts/utils/   # 地址規則 AST 語法解析器 (Chevrotain)
+    │   └── data/            # 壓縮索引與原始資料檔目錄
+    └── demo/                # [靜態展示頁] Vanilla TS 展示網站範例
+```
 
-## 🛠️ 開發指令
+## 🛠️ 開發與建置指令
 
 | 指令 | 說明 |
 |------|------|
-| `bun run download` | 執行資料同步，下載原始 `raw_addresses.json` |
-| `bun run build:data` | 讀取原始資料，進行 Front Coding 編碼與結構化 |
-| `bun test` | 執行單元測試 (包含 Parser、搜尋邏輯驗證) |
-| `bun run dev` | 在 `packages/demo` 啟動開發伺服器 |
+| `bun run build:data` | 讀取 `raw_addresses.json`，進行 Front Coding 編碼與 AST 規則結構化 |
+| `bun test` | 執行核心單元測試 (包含 Parser、搜尋邏輯驗證) |
+| `bun run dev` | 在 `packages/demo` 啟動靜態展示網頁開發伺服器 |
+| `bun run build` | 完整建置核心資料檔與 Demo 靜態網站 |

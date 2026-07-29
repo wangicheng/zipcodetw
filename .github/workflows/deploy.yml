@@ -30,8 +30,10 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      - name: Download Data (External Crawler Tool)
-        run: bun run tools/data-crawler/download.ts
+      # 注意：此爬蟲步驟僅供 GitHub Pages 靜態 Demo 的定時自動化更新數據使用
+      # 交付中華郵政正式環境時不包含此流程與 tools/data-crawler 工具
+      - name: Download Data (Demo Auto-Sync via External Crawler)
+        run: bun run tools:download
 
       - name: Build Data Files
         working-directory: packages/zipcodetw

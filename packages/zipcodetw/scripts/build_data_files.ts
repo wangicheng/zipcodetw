@@ -8,7 +8,15 @@ async function main() {
   console.time('Build Data Files');
   // Read raw data
   console.log('Reading raw data...');
-  const data: RawAddress[] = JSON.parse(await fs.readFile(RAW_ADDRESSES_PATH, 'utf-8'));
+  let data: RawAddress[] = [];
+  try {
+    const content = await fs.readFile(RAW_ADDRESSES_PATH, 'utf-8');
+    data = JSON.parse(content);
+  } catch (err) {
+    console.error(`\n❌ [Build Error] 找不到原始地址檔或 JSON 格式錯誤：${RAW_ADDRESSES_PATH}`);
+    console.error('👉 請先放置符合規格的 raw_addresses.json 檔案（規格請參閱 README.md）。\n');
+    process.exit(1);
+  }
 
   // Group data so same part1 appear together (O(N) instead of sort O(N log N))
   const grouped = new Map<string, RawAddress[]>();
