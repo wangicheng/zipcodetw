@@ -1,37 +1,20 @@
 import fs from 'node:fs/promises';
-import { promisify } from 'node:util';
-import zlib from 'node:zlib';
+import path from 'node:path';
 import { ADDRESS_PREFIXES_PATH, ZIPCODE_RULES_PATH } from './core/constants.ts';
 import type { Part2Entry } from './core/types.ts';
 import { ZipCodeTw, type ZipCodeTwOptions } from './ZipCodeTw.ts';
 
-const gunzip = promisify(zlib.gunzip);
-
-import path from 'node:path';
-
-async function loadSingleFile(p: string): Promise<string> {
-  if (p.endsWith('.gz')) {
-    const buffer = await fs.readFile(p);
-    const decompressed = await gunzip(buffer);
-    return decompressed.toString('utf-8');
-  }
-  return await fs.readFile(p, 'utf-8');
-}
-
 async function loadFile(filePath: string): Promise<string> {
   const candidates = [
     filePath,
-    `${filePath}.gz`,
     path.resolve(import.meta.dirname, '../', filePath),
-    path.resolve(import.meta.dirname, '../', `${filePath}.gz`),
     path.resolve(import.meta.dirname, '../data', path.basename(filePath)),
-    path.resolve(import.meta.dirname, '../data', `${path.basename(filePath)}.gz`),
   ];
 
   for (const candidate of candidates) {
     try {
       await fs.access(candidate);
-      return await loadSingleFile(candidate);
+      return await fs.readFile(candidate, 'utf-8');
     } catch {}
   }
 

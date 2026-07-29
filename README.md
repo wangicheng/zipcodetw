@@ -20,7 +20,7 @@ ZipCodeTw 是一個專為台灣地址設計的郵遞區號解析函式庫。它�
   - 內建語法解析器（基於 Chevrotain）精確解析中華郵政的複雜投遞規則。
   - 支援單雙號、範圍（至、含附號）、樓層（B1、2樓以上）等條件判斷。
 - **🌐 雙端支援**：
-  - **Browser**：支援 `Gzip` + `Streaming Decompression`，實現純前端離線查詢。
+  - **Browser**：支援純前端離線查詢，可透過 Web 伺服器 / CDN 標頭（Content-Encoding: br / gzip）輕鬆達成極小傳輸。
   - **Server**：支援 Node.js 與 Bun，適合高併發 API 服務。
 - **🛠️ 資料同步自動化**：
   - 內建自動化資料獲取腳本（包含人機驗證處理機制），可隨時從官方來源同步最新數據。
@@ -37,7 +37,7 @@ bun install
 # 2. 下載最新郵遞區號資料 (自動化獲取官方最新資料)
 bun run download
 
-# 3. 建置與壓縮資料檔 (產出至 packages/zipcodetw/data)
+# 3. 建置資料檔 (產出至 packages/zipcodetw/data)
 bun run build:data
 ```
 
@@ -48,10 +48,10 @@ bun run build:data
 ```typescript
 import { ZipCodeTw } from 'zipcodetw';
 
-// 透過 URL 載入壓縮的資料檔
+// 透過 URL 載入資料檔
 const zipCodeTw = await ZipCodeTw.create(
-  './data/address_prefixes.txt.gz',
-  './data/zipcode_rules.json.gz'
+  './data/address_prefixes.txt',
+  './data/zipcode_rules.json'
 );
 
 const matches = zipCodeTw.search('台北市大安區和平東路三段');
@@ -83,6 +83,6 @@ const result = zipCodeTw.search('新竹市東區科學園區力行路');
 | 指令 | 說明 |
 |------|------|
 | `bun run download` | 執行資料同步，下載原始 `raw_addresses.json` |
-| `bun run build:data` | 讀取原始資料，進行正規化與壓縮，生成 `.gz` 檔 |
+| `bun run build:data` | 讀取原始資料，進行 Front Coding 編碼與結構化 |
 | `bun test` | 執行單元測試 (包含 Parser、搜尋邏輯驗證) |
 | `bun run dev` | 在 `packages/demo` 啟動開發伺服器 |

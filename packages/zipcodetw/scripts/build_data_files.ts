@@ -1,19 +1,8 @@
 import fs from 'node:fs/promises';
-import { promisify } from 'node:util';
-import zlib from 'node:zlib';
 import { ADDRESS_PREFIXES_PATH, RAW_ADDRESSES_PATH, ZIPCODE_RULES_PATH } from '../src/core/constants.ts';
 import type { AddressRule, RawAddress } from '../src/core/types.ts';
 import { encodeFrontCode } from '../src/utils/frontCode.ts';
 import { parseAddress } from '../scripts/utils/parseRule.ts';
-
-const gzip = promisify(zlib.gzip);
-
-/**
- * Compress content using Gzip
- */
-async function compressContent(content: string): Promise<Buffer> {
-  return await gzip(Buffer.from(content, 'utf-8'), { level: 9 });
-}
 
 async function main() {
   console.time('Build Data Files');
@@ -49,12 +38,11 @@ async function main() {
 
   const part1List = Array.from(new Set(addressStrings.filter(Boolean)));
 
-  // Generate Compressed Address Prefixes (FC + Gzip)
-  console.log('Compressing Address Prefixes (FC + Gzip)...');
+  // Generate Address Prefixes (FC)
+  console.log('Generating Address Prefixes (Front Coding)...');
   const fcContent = encodeFrontCode(part1List);
-  const compressedPrefixes = await compressContent(fcContent);
-  await fs.writeFile(`${ADDRESS_PREFIXES_PATH}.gz`, compressedPrefixes);
-  console.log(`GZ 檔案已產生：${ADDRESS_PREFIXES_PATH}.gz`);
+  await fs.writeFile(ADDRESS_PREFIXES_PATH, fcContent, 'utf-8');
+  console.log(`檔案已產生：${ADDRESS_PREFIXES_PATH}`);
 
   // Build index map
   const addressToIndex = new Map(part1List.map((addr, i) => [addr, i]));
@@ -82,12 +70,11 @@ async function main() {
     };
   });
   
-  // Generate Compressed Zipcode Rules (Gzip)
-  console.log('Compressing Zipcode Rules (GzipOnly)...');
+  // Generate Zipcode Rules (JSON)
+  console.log('Generating Zipcode Rules (JSON)...');
   const rawRulesContent = JSON.stringify(part2Data);
-  const compressedRules = await compressContent(rawRulesContent);
-  await fs.writeFile(`${ZIPCODE_RULES_PATH}.gz`, compressedRules);
-  console.log(`GZ 檔案已產生：${ZIPCODE_RULES_PATH}.gz`);
+  await fs.writeFile(ZIPCODE_RULES_PATH, rawRulesContent, 'utf-8');
+  console.log(`檔案已產生：${ZIPCODE_RULES_PATH}`);
 
   console.timeEnd('Build Data Files');
 }

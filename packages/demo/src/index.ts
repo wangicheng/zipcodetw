@@ -22,7 +22,7 @@ const init = async () => {
 
   try {
     console.time('Init ZipCodeTw Engine');
-    const zipCodeTw = await ZipCodeTw.create('./data/address_prefixes.txt.gz', './data/zipcode_rules.json.gz');
+    const zipCodeTw = await ZipCodeTw.create('./data/address_prefixes.txt', './data/zipcode_rules.json');
     console.timeEnd('Init ZipCodeTw Engine');
 
     container.innerHTML = `

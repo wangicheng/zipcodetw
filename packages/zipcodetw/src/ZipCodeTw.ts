@@ -18,37 +18,27 @@ export class ZipCodeTw {
   }
 
   /**
-   * Helper to fetch and decompress a file if needed.
-   * Expects the browser global `fetch` and `DecompressionStream`.
+   * Helper to fetch text from a URL.
    */
-  private static async fetchAndDecompress(url: string): Promise<string> {
+  private static async fetchText(url: string): Promise<string> {
     const res = await fetch(url);
     if (!res.ok) {
       throw new Error(`Failed to fetch: ${url} (${res.status} ${res.statusText})`);
     }
 
-    // If it's a gzip file, use DecompressionStream
-    if (url.endsWith('.gz')) {
-      const ds = new DecompressionStream('gzip');
-      const decompressedStream = res.body?.pipeThrough(ds);
-      if (!decompressedStream) throw new Error('Response body is null');
-      return await new Response(decompressedStream).text();
-    }
-
-    // Otherwise just return text
     return await res.text();
   }
 
   /**
    * Initialize using URLs (Browser friendly).
-   * Fetches data, decompresses if .gz, and initializes the service.
+   * Fetches data and initializes the service.
    *
-   * @param prefixesUrl URL to address_prefixes file (e.g. "data/prefixes.txt.gz")
-   * @param rulesUrl URL to zipcode_rules file (e.g. "data/rules.json.gz")
+   * @param prefixesUrl URL to address_prefixes file (e.g. "data/address_prefixes.txt")
+   * @param rulesUrl URL to zipcode_rules file (e.g. "data/zipcode_rules.json")
    * @param options Optional custom normalizer or ranker
    */
   public static async create(prefixesUrl: string, rulesUrl: string, options?: ZipCodeTwOptions): Promise<ZipCodeTw> {
-    const [prefixesContent, rulesJsonStr] = await Promise.all([ZipCodeTw.fetchAndDecompress(prefixesUrl), ZipCodeTw.fetchAndDecompress(rulesUrl)]);
+    const [prefixesContent, rulesJsonStr] = await Promise.all([ZipCodeTw.fetchText(prefixesUrl), ZipCodeTw.fetchText(rulesUrl)]);
 
     let part2Data: Part2Entry[];
     try {

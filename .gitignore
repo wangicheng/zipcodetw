@@ -35,8 +35,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # zipcode raw data & generated assets
 packages/zipcodetw/data/**
-!packages/zipcodetw/data/address_prefixes.txt.gz
-!packages/zipcodetw/data/zipcode_rules.json.gz
+!packages/zipcodetw/data/address_prefixes.txt
+!packages/zipcodetw/data/zipcode_rules.json
 
 # demo public assets (generated)
 packages/demo/public/index.js
