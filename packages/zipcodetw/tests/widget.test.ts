@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { TAIWAN_DISTRICTS, normalizeCityName } from '../src/widget/taiwanDistricts.ts';
 import { createZipCodeTw } from '../src/node.ts';
+import { normalizeCityName, TAIWAN_DISTRICTS } from '../src/widget/taiwanDistricts.ts';
 
 describe('Widget Taiwan Districts & Helpers', () => {
   test('TAIWAN_DISTRICTS contains 22 counties', () => {
@@ -26,5 +26,56 @@ describe('Widget Taiwan Districts & Helpers', () => {
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].zipcode).toHaveLength(6);
     expect(results[0].zipcode.startsWith('106')).toBe(true);
+  });
+
+  test('TwAddressPicker exports correct interfaces and types', () => {
+    // Import and verify type imports compile properly
+    import('../src/index.ts').then((mod) => {
+      expect(mod.TwAddressPicker).toBeDefined();
+    });
+  });
+
+  test('TwAddressPicker value calculation returns correct AddressStatus and fields', async () => {
+    const { TwAddressPicker } = await import('../src/index.ts');
+    const zipEngine = await createZipCodeTw();
+
+    const picker = new TwAddressPicker();
+    picker.zipCodeTw = zipEngine;
+
+    // Initial state: empty
+    expect(picker.value.status).toBe('empty');
+    expect(picker.value.isValid).toBe(false);
+    expect(picker.value.isExact).toBe(false);
+    expect(picker.value.zipcode3).toBe('');
+
+    // City & District selected: incomplete state
+    picker.setAddress({ city: '臺北市', district: '大安區' });
+    expect(picker.value.status).toBe('incomplete');
+    expect(picker.value.zipcode3).toBe('106');
+    expect(picker.value.isValid).toBe(false);
+
+    // Exact match address
+    picker.setAddress({ detail: '和平東路三段100號' });
+    expect(picker.value.status).toBe('exact');
+    expect(picker.value.isValid).toBe(true);
+    expect(picker.value.isExact).toBe(true);
+    expect(picker.value.zipcode).toHaveLength(6);
+    expect(picker.value.zipcode3).toBe('106');
+  });
+
+  test('TwAddressPicker handles border district exceptions correctly via majority voting', async () => {
+    const { TwAddressPicker } = await import('../src/index.ts');
+    const zipEngine = await createZipCodeTw();
+
+    const picker = new TwAddressPicker();
+    picker.zipCodeTw = zipEngine;
+
+    // 嘉義縣中埔鄉 without detail should return standard majority district code '606'
+    picker.setAddress({ city: '嘉義縣', district: '中埔鄉', detail: '' });
+    expect(picker.value.zipcode3).toBe('606');
+
+    // When detailed border address (八寶寮6號) is specified, return exact delivery prefix '732'
+    picker.setAddress({ detail: '八寶寮6號' });
+    expect(picker.value.zipcode3).toBe('732');
   });
 });

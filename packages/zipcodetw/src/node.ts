@@ -5,11 +5,7 @@ import type { Part2Entry } from './core/types.ts';
 import { ZipCodeTw, type ZipCodeTwOptions } from './ZipCodeTw.ts';
 
 async function loadFile(filePath: string): Promise<string> {
-  const candidates = [
-    filePath,
-    path.resolve(import.meta.dirname, '../', filePath),
-    path.resolve(import.meta.dirname, '../data', path.basename(filePath)),
-  ];
+  const candidates = [filePath, path.resolve(import.meta.dirname, '../', filePath), path.resolve(import.meta.dirname, '../data', path.basename(filePath))];
 
   for (const candidate of candidates) {
     try {
@@ -28,7 +24,7 @@ async function loadFile(filePath: string): Promise<string> {
 export async function createZipCodeTw(
   prefixesPath: string = ADDRESS_PREFIXES_PATH,
   rulesPath: string = ZIPCODE_RULES_PATH,
-  options?: ZipCodeTwOptions
+  options?: ZipCodeTwOptions,
 ): Promise<ZipCodeTw> {
   const prefixesContent = await loadFile(prefixesPath);
   const rulesContent = await loadFile(rulesPath);

@@ -1,6 +1,13 @@
-import { ZipCodeTw } from '../ZipCodeTw.ts';
 import type { SearchMatch } from '../core/types.ts';
-import { TAIWAN_DISTRICTS, normalizeCityName } from './taiwanDistricts.ts';
+import { ZipCodeTw } from '../ZipCodeTw.ts';
+import { normalizeCityName, TAIWAN_DISTRICTS } from './taiwanDistricts.ts';
+
+export type AddressStatus = 'empty' | 'incomplete' | 'need_selection' | 'exact' | 'no_match';
+
+export interface AddressCandidate {
+  zipcode: string;
+  label: string;
+}
 
 export interface AddressChangeEventDetail {
   city: string;
@@ -8,11 +15,16 @@ export interface AddressChangeEventDetail {
   detail: string;
   fullAddress: string;
   zipcode: string;
+  zipcode3: string;
+  status: AddressStatus;
+  isValid: boolean;
   isExact: boolean;
-  matches: SearchMatch[];
+  candidates?: AddressCandidate[];
 }
 
-export class TwAddressPicker extends HTMLElement {
+const CustomElementBase = typeof HTMLElement !== 'undefined' ? HTMLElement : (class {} as typeof HTMLElement);
+
+export class TwAddressPicker extends CustomElementBase {
   private zipEngine: ZipCodeTw | null = null;
   private shadow: ShadowRoot;
 
@@ -38,7 +50,11 @@ export class TwAddressPicker extends HTMLElement {
 
   constructor() {
     super();
-    this.shadow = this.attachShadow({ mode: 'open' });
+    if (typeof (this as any).attachShadow === 'function') {
+      this.shadow = this.attachShadow({ mode: 'open' });
+    } else {
+      this.shadow = {} as ShadowRoot;
+    }
   }
 
   connectedCallback() {
@@ -73,16 +89,88 @@ export class TwAddressPicker extends HTMLElement {
    */
   public get value(): AddressChangeEventDetail {
     const fullAddress = `${this.currentCity}${this.currentDistrict}${this.currentDetail}`.trim();
-    const isExact = Boolean(this.selectedZipcode && this.currentMatches.length >= 1);
+    const zipcode3 = this.getZipcode3();
+
+    let status: AddressStatus = 'empty';
+    let isExact = false;
+    let isValid = false;
+    let zipcode = '';
+    let candidates: AddressCandidate[] | undefined = undefined;
+
+    if (!this.currentCity || !this.currentDistrict) {
+      status = 'empty';
+    } else if (!this.currentDetail) {
+      status = 'incomplete';
+    } else if (this.currentMatches.length === 0) {
+      status = 'no_match';
+    } else if (this.selectedZipcode) {
+      status = 'exact';
+      zipcode = this.selectedZipcode;
+      isExact = true;
+      isValid = true;
+    } else {
+      status = 'need_selection';
+      candidates = this.getCandidates(this.currentMatches);
+    }
+
     return {
       city: this.currentCity,
       district: this.currentDistrict,
       detail: this.currentDetail,
       fullAddress,
-      zipcode: this.selectedZipcode,
+      zipcode,
+      zipcode3,
+      status,
+      isValid,
       isExact,
-      matches: this.currentMatches,
+      ...(candidates ? { candidates } : {}),
     };
+  }
+
+  private getZipcode3(): string {
+    if (!this.zipEngine || !this.currentCity || !this.currentDistrict) {
+      return '';
+    }
+    // 1. If 6-digit zipcode is selected (or uniquely determined), return its 3-digit prefix
+    if (this.selectedZipcode && this.selectedZipcode.length >= 3) {
+      return this.selectedZipcode.slice(0, 3);
+    }
+    // 2. If detail is empty, calculate the majority 3-digit prefix for the district to avoid border exceptions
+    const districtMatches = this.zipEngine.search(`${this.currentCity}${this.currentDistrict}`);
+    if (districtMatches.length > 0) {
+      const counts: Record<string, number> = {};
+      let maxCount = 0;
+      let majorityZ3 = '';
+
+      for (const m of districtMatches) {
+        if (m.zipcode && m.zipcode.length >= 3) {
+          const z3 = m.zipcode.slice(0, 3);
+          const newCount = (counts[z3] || 0) + 1;
+          counts[z3] = newCount;
+          if (newCount > maxCount) {
+            maxCount = newCount;
+            majorityZ3 = z3;
+          }
+        }
+      }
+      return majorityZ3;
+    }
+    return '';
+  }
+
+  private getCandidates(matches: SearchMatch[]): AddressCandidate[] {
+    const items: AddressCandidate[] = [];
+    const seen = new Set<string>();
+
+    for (const m of matches) {
+      const key = `${m.zipcode}_${m.bulkName}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        const label = m.bulkName ? `${m.part1}${m.part2} (${m.bulkName})` : `${m.part1}${m.part2}`;
+        items.push({ zipcode: m.zipcode, label });
+      }
+    }
+    return items;
   }
 
   /**
@@ -91,16 +179,16 @@ export class TwAddressPicker extends HTMLElement {
   public setAddress(address: { city?: string; district?: string; detail?: string }) {
     if (address.city !== undefined) {
       this.currentCity = normalizeCityName(address.city);
-      this.citySelect.value = this.currentCity;
+      if (this.citySelect) this.citySelect.value = this.currentCity;
       this.populateDistricts();
     }
     if (address.district !== undefined) {
       this.currentDistrict = address.district;
-      this.districtSelect.value = this.currentDistrict;
+      if (this.districtSelect) this.districtSelect.value = this.currentDistrict;
     }
     if (address.detail !== undefined) {
       this.currentDetail = address.detail;
-      this.detailInput.value = this.currentDetail;
+      if (this.detailInput) this.detailInput.value = this.currentDetail;
     }
     this.calculateZipCode();
   }
@@ -418,8 +506,9 @@ export class TwAddressPicker extends HTMLElement {
 
   private populateDistricts() {
     const districts = TAIWAN_DISTRICTS[this.currentCity] || [];
-    this.districtSelect.innerHTML = '<option value="">-- 請選擇區域 --</option>' +
-      districts.map((d) => `<option value="${d}">${d}</option>`).join('');
+    if (this.districtSelect) {
+      this.districtSelect.innerHTML = '<option value="">-- 請選擇區域 --</option>' + districts.map((d) => `<option value="${d}">${d}</option>`).join('');
+    }
     this.currentDistrict = '';
   }
 
@@ -491,37 +580,36 @@ export class TwAddressPicker extends HTMLElement {
   }
 
   private renderBadgeState(state: 'idle' | 'active' | 'need-select', text: string) {
-    this.badgeElement.className = `zipcode-badge ${state}`;
-    const badgeText = this.shadow.getElementById('badgeText') as HTMLElement;
-    badgeText.textContent = text;
+    if (this.badgeElement) {
+      this.badgeElement.className = `zipcode-badge ${state}`;
+    }
+    if (this.shadow && typeof this.shadow.getElementById === 'function') {
+      const badgeText = this.shadow.getElementById('badgeText');
+      if (badgeText) badgeText.textContent = text;
+    }
   }
 
   private toggleCandidatePopover() {
     this.isDropdownOpen = !this.isDropdownOpen;
-    if (this.isDropdownOpen) {
-      this.candidateContainer.classList.add('show');
-    } else {
-      this.candidateContainer.classList.remove('show');
+    if (this.candidateContainer) {
+      if (this.isDropdownOpen) {
+        this.candidateContainer.classList.add('show');
+      } else {
+        this.candidateContainer.classList.remove('show');
+      }
     }
   }
 
   private closeCandidatePopover() {
     this.isDropdownOpen = false;
-    this.candidateContainer.classList.remove('show');
+    if (this.candidateContainer) {
+      this.candidateContainer.classList.remove('show');
+    }
   }
 
   private renderCandidatePopover(matches: SearchMatch[]) {
-    const items: { zipcode: string; label: string }[] = [];
-    const seen = new Set<string>();
-
-    for (const m of matches) {
-      const key = `${m.zipcode}_${m.bulkName}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        const label = m.bulkName ? `${m.part1}${m.part2} (${m.bulkName})` : `${m.part1}${m.part2}`;
-        items.push({ zipcode: m.zipcode, label });
-      }
-    }
+    if (!this.candidateMenu) return;
+    const items = this.getCandidates(matches);
 
     this.candidateMenu.innerHTML = items
       .map(
@@ -530,7 +618,7 @@ export class TwAddressPicker extends HTMLElement {
           <span style="font-size: 13px;">${item.label}</span>
           <span class="popover-zipcode">${item.zipcode}</span>
         </div>
-      `
+      `,
       )
       .join('');
 
@@ -561,7 +649,7 @@ export class TwAddressPicker extends HTMLElement {
         detail: eventDetail,
         bubbles: true,
         composed: true,
-      })
+      }),
     );
     this.dispatchEvent(new Event('change', { bubbles: true }));
   }

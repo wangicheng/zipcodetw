@@ -4,10 +4,7 @@ import { decodeFrontCode, encodeFrontCode } from '../src/utils/frontCode';
 describe('Front Code Utility', () => {
   describe('encodeFrontCode', () => {
     it('should encode a sorted list of strings', () => {
-      const input = [
-        '基隆市七堵區光明路',
-        '基隆市七堵區實踐路',
-      ];
+      const input = ['基隆市七堵區光明路', '基隆市七堵區實踐路'];
       // "基隆市七堵區" is 6 chars long
       const expected = '0\t基隆市七堵區光明路\n6\t實踐路';
       expect(encodeFrontCode(input)).toBe(expected);
@@ -38,11 +35,7 @@ describe('Front Code Utility', () => {
     });
 
     it('should handle round trip', () => {
-      const input = [
-        '臺北市信義區市府路',
-        '臺北市信義區松壽路',
-        '臺北市大安區忠孝東路',
-      ];
+      const input = ['臺北市信義區市府路', '臺北市信義區松壽路', '臺北市大安區忠孝東路'];
       const encoded = encodeFrontCode(input);
       const decoded = decodeFrontCode(encoded);
       expect(decoded).toBe(input.join('\n'));

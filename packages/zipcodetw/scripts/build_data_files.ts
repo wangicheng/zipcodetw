@@ -69,7 +69,7 @@ async function main() {
       zipcode: addr.zipcode.replaceAll(' ', ''),
     };
   });
-  
+
   // Generate Zipcode Rules (JSON)
   console.log('Generating Zipcode Rules (JSON)...');
   const rawRulesContent = JSON.stringify(part2Data);

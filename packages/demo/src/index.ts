@@ -1,4 +1,4 @@
-import { ZipCodeTw, TwAddressPicker, type AddressChangeEventDetail } from 'zipcodetw';
+import { type AddressChangeEventDetail, TwAddressPicker, ZipCodeTw } from 'zipcodetw';
 
 const app = document.getElementById('app');
 
@@ -108,6 +108,7 @@ const init = async () => {
 
     if (pickerWidget) {
       pickerWidget.zipCodeTw = zipCodeTw;
+      widgetOutput.textContent = JSON.stringify(pickerWidget.value, null, 2);
       pickerWidget.addEventListener('address-change', (e: Event) => {
         const detail = (e as CustomEvent<AddressChangeEventDetail>).detail;
         widgetOutput.textContent = JSON.stringify(detail, null, 2);
@@ -167,7 +168,6 @@ const init = async () => {
 
     // Auto focus on free text search box
     input.focus();
-
   } catch (error) {
     container.innerHTML += `<p style="color:red">無法載入數據: ${error}</p>`;
     console.error('Initialization Failed:', error);

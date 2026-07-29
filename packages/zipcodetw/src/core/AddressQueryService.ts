@@ -16,7 +16,7 @@ export class AddressQueryService {
     engine: AddressSearchEngineOptimized,
     part2Data: Part2Entry[],
     normalizer: AddressNormalizer = new DefaultAddressNormalizer(),
-    ranker: AddressRanker = new PostalDeliveryRanker()
+    ranker: AddressRanker = new PostalDeliveryRanker(),
   ) {
     this.engine = engine;
     this.part2Data = part2Data;
