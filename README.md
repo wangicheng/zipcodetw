@@ -108,6 +108,38 @@ const zipCodeTw = await createZipCodeTw();
 const result = zipCodeTw.search('新竹市東區科學園區力行路');
 ```
 
+### Web Component 表單選取組件 (`<tw-address-picker>`)
+
+本函式庫內建原生 Web Component 組件，支援跨框架（HTML / Vue / React / Angular）無縫整合縣市/鄉鎮區選單、門牌帶入與 3+3 郵遞區號即時運算：
+
+#### HTML 直接引用
+
+```html
+<script type="module">
+  import 'zipcodetw';
+</script>
+
+<tw-address-picker 
+  prefixes-url="./data/address_prefixes.txt" 
+  rules-url="./data/zipcode_rules.json">
+</tw-address-picker>
+```
+
+#### TypeScript / JavaScript 事件監聽
+
+```typescript
+import { TwAddressPicker, type AddressChangeEventDetail } from 'zipcodetw';
+
+const picker = document.querySelector('tw-address-picker') as TwAddressPicker;
+
+picker.addEventListener('address-change', (e: Event) => {
+  const detail = (e as CustomEvent<AddressChangeEventDetail>).detail;
+  console.log(detail.fullAddress); // "臺北市大安區和平東路三段1號"
+  console.log(detail.zipcode);     // "106008" (6碼郵遞區號)
+  console.log(detail.isExact);     // true (是否成功比對到正確郵遞區號)
+});
+```
+
 ## 📂 專案結構
 
 ```
