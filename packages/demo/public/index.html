@@ -39,7 +39,8 @@
       .header {
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
+        gap: 12px;
         margin-bottom: 20px;
         border-bottom: 1px solid var(--border-color);
         padding-bottom: 15px;
@@ -47,6 +48,7 @@
       .header h1 {
         margin: 0;
         font-size: 1.8rem;
+        line-height: 1.25;
       }
       .github-link {
         font-size: 0.9rem;
@@ -56,6 +58,9 @@
         border-radius: 6px;
         color: var(--text-color);
         transition: all 0.2s;
+        flex-shrink: 0;
+        white-space: nowrap;
+        margin-top: 2px;
       }
       .github-link:hover {
         border-color: var(--link-color);
@@ -78,6 +83,23 @@
         background-color: var(--input-bg);
         color: var(--text-color);
         border: 1px solid var(--input-border);
+      }
+      @media (max-width: 576px) {
+        body {
+          padding: 12px;
+        }
+        .header {
+          gap: 8px;
+          margin-bottom: 16px;
+          padding-bottom: 12px;
+        }
+        .header h1 {
+          font-size: 1.25rem;
+        }
+        .github-link {
+          padding: 4px 8px;
+          font-size: 0.8rem;
+        }
       }
     </style>
   </head>

@@ -35,11 +35,11 @@ const init = async () => {
       </div>
 
       <!-- Mode Switcher Tabs -->
-      <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
-        <button id="tabSearch" class="tab-button active" style="padding: 8px 16px; border: 1px solid var(--border-color); background: #475569; color: #ffffff; font-weight: 600; border-radius: 6px; cursor: pointer;">
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+        <button id="tabSearch" class="tab-button active" style="flex: 1 1 auto; padding: 8px 16px; border: 1px solid var(--border-color); background: #475569; color: #ffffff; font-weight: 600; border-radius: 6px; cursor: pointer; text-align: center;">
           自由地址查詢
         </button>
-        <button id="tabWidget" class="tab-button" style="padding: 8px 16px; border: 1px solid var(--border-color); background: transparent; color: var(--text-color); font-weight: 600; border-radius: 6px; cursor: pointer;">
+        <button id="tabWidget" class="tab-button" style="flex: 1 1 auto; padding: 8px 16px; border: 1px solid var(--border-color); background: transparent; color: var(--text-color); font-weight: 600; border-radius: 6px; cursor: pointer; text-align: center;">
           Web Component 表單選取組件範例
         </button>
       </div>
@@ -60,9 +60,9 @@ const init = async () => {
 
           <tw-address-picker id="addressPickerWidget"></tw-address-picker>
 
-          <div style="margin-top: 16px; padding: 14px; background: #18181b; color: #f4f4f5; border: 1px solid var(--border-color); border-radius: 8px; font-family: monospace; font-size: 0.85rem;">
+          <div style="margin-top: 16px; padding: 14px; background: #18181b; color: #f4f4f5; border: 1px solid var(--border-color); border-radius: 8px; font-family: monospace; font-size: 0.85rem; overflow-x: auto;">
             <div style="color: #a1a1aa; margin-bottom: 6px; font-weight: bold;">[組件即時事件輸出 (address-change event detail)]</div>
-            <pre id="widgetOutput" style="margin: 0; white-space: pre-wrap;">{ "status": "等待輸入門牌..." }</pre>
+            <pre id="widgetOutput" style="margin: 0; white-space: pre-wrap; word-break: break-all;">{ "status": "等待輸入門牌..." }</pre>
           </div>
         </section>
       </div>

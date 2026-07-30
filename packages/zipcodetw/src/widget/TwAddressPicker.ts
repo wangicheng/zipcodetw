@@ -375,6 +375,8 @@ export class TwAddressPicker extends CustomElementBase {
         right: 0;
         margin-top: 6px;
         width: 320px;
+        max-width: calc(100vw - 32px);
+        max-height: 260px;
         background-color: var(--picker-bg);
         color: var(--picker-text);
         border: 1px solid var(--picker-border);
@@ -382,7 +384,7 @@ export class TwAddressPicker extends CustomElementBase {
         box-shadow: 0 10px 25px rgba(0,0,0,0.25);
         z-index: 100;
         display: none;
-        overflow: hidden;
+        overflow-y: auto;
       }
 
       .candidate-popover.show {
@@ -390,13 +392,16 @@ export class TwAddressPicker extends CustomElementBase {
       }
 
       .popover-header {
+        position: sticky;
+        top: 0;
         padding: 8px 12px;
         background-color: var(--gray-bg);
         border-bottom: 1px solid var(--picker-border);
         font-size: 12px;
         font-weight: 600;
         color: var(--picker-text);
-        opacity: 0.85;
+        opacity: 0.95;
+        z-index: 1;
       }
 
       .popover-item {
@@ -423,6 +428,47 @@ export class TwAddressPicker extends CustomElementBase {
         font-weight: bold;
         color: var(--picker-text);
       }
+
+      .badge-wrapper {
+        position: relative;
+      }
+
+      @media (max-width: 576px) {
+        .picker-container {
+          padding: 12px;
+        }
+
+        .select-group {
+          flex: 1 1 100%;
+          width: 100%;
+        }
+
+        select {
+          flex: 1 1 calc(50% - 4px);
+          min-width: 0;
+          font-size: 16px;
+        }
+
+        input[type="text"] {
+          font-size: 16px;
+        }
+
+        .badge-wrapper {
+          width: 100%;
+          flex: 1 1 100%;
+        }
+
+        .zipcode-badge {
+          width: 100%;
+        }
+
+        .candidate-popover {
+          left: 0;
+          right: 0;
+          width: 100%;
+          max-width: 100%;
+        }
+      }
     `;
 
     const citiesHtml = Object.keys(TAIWAN_DISTRICTS)
@@ -442,7 +488,7 @@ export class TwAddressPicker extends CustomElementBase {
               <option value="">-- 請選擇區域 --</option>
             </select>
           </div>
-          <div style="position: relative;">
+          <div class="badge-wrapper">
             <div id="badge" class="zipcode-badge idle" role="status" aria-live="polite">
               <span id="badgeText">------</span>
             </div>
