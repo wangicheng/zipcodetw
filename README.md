@@ -108,11 +108,11 @@ const zipCodeTw = await createZipCodeTw();
 const result = zipCodeTw.search('新竹市東區科學園區力行路');
 ```
 
-### Web Component 表單選取組件 (`<tw-address-picker>`)
+### Web Component 表單組件 (`<tw-address-picker>` & `<tw-address-search>`)
 
-本函式庫內建原生 Web Component 組件，支援跨框架（HTML / Vue / React / Angular）無縫整合縣市/鄉鎮區選單、門牌帶入與 3+3 郵遞區號即時運算：
+本函式庫內建兩款獨立、即插即用的原生 Web Component 組件（支援 HTML / Vue / React / Angular）：
 
-#### HTML 直接引用
+#### 1. 傳統三階下拉選單組件 (`<tw-address-picker>`)
 
 ```html
 <script type="module">
@@ -123,6 +123,16 @@ const result = zipCodeTw.search('新竹市東區科學園區力行路');
   prefixes-url="./data/address_prefixes.txt" 
   rules-url="./data/zipcode_rules.json">
 </tw-address-picker>
+```
+
+#### 2. 單欄純字串查詢組件 (`<tw-address-search>`)
+
+```html
+<tw-address-search 
+  prefixes-url="./data/address_prefixes.txt" 
+  rules-url="./data/zipcode_rules.json"
+  placeholder="請輸入完整地址 (例如: 臺北市大安區和平東路三段1號)">
+</tw-address-search>
 ```
 
 #### TypeScript / JavaScript 事件監聽
@@ -136,8 +146,37 @@ picker.addEventListener('address-change', (e: Event) => {
   const detail = (e as CustomEvent<AddressChangeEventDetail>).detail;
   console.log(detail.fullAddress); // "臺北市大安區和平東路三段1號"
   console.log(detail.zipcode);     // "106008" (6碼郵遞區號)
+  console.log(detail.city);        // "臺北市"
+  console.log(detail.district);    // "大安區"
   console.log(detail.isExact);     // true (是否成功比對到正確郵遞區號)
 });
+```
+
+#### 3. 100% 自由 CSS 樣式與排版自訂 (`::part`)
+
+本組件開放內部 Shadow DOM 的 `part` 屬性，外部開發者可利用原生 CSS `::part()` 自由調整任意排版與樣式：
+
+```css
+/* 自訂容器外觀與外距 */
+tw-address-picker::part(container) {
+  border-radius: 12px;
+}
+
+/* 自訂縣市/鄉鎮區下拉選單 */
+tw-address-picker::part(city-select),
+tw-address-picker::part(district-select) {
+  font-size: 14px;
+}
+
+/* 自訂詳細地址輸入框 */
+tw-address-picker::part(detail-input) {
+  font-size: 15px;
+}
+
+/* 自訂郵遞區號 Badge */
+tw-address-picker::part(badge) {
+  font-weight: bold;
+}
 ```
 
 ## 專案結構

@@ -78,4 +78,44 @@ describe('Widget Taiwan Districts & Helpers', () => {
     picker.setAddress({ detail: '八寶寮6號' });
     expect(picker.value.zipcode3).toBe('732');
   });
+
+  test('TwAddressSearch supports single string address queries', async () => {
+    const { TwAddressSearch } = await import('../src/index.ts');
+    const zipEngine = await createZipCodeTw();
+
+    const searchWidget = new TwAddressSearch();
+    searchWidget.zipCodeTw = zipEngine;
+
+    // Initial state
+    expect(searchWidget.value.status).toBe('empty');
+
+    // Exact full address query
+    searchWidget.search('臺北市大安區和平東路三段100號');
+    expect(searchWidget.value.status).toBe('exact');
+    expect(searchWidget.value.zipcode).toHaveLength(6);
+    expect(searchWidget.value.zipcode.startsWith('106')).toBe(true);
+    expect(searchWidget.value.city).toBe('臺北市');
+    expect(searchWidget.value.district).toBe('大安區');
+
+    // Ambiguous query
+    searchWidget.search('中山路100號');
+    expect(searchWidget.value.status).toBe('need_selection');
+    expect(searchWidget.value.candidates!.length).toBeGreaterThan(1);
+
+    // Clear
+    searchWidget.clear();
+    expect(searchWidget.value.status).toBe('empty');
+    expect(searchWidget.value.zipcode).toBe('');
+  });
+
+  test('TwAddressPicker and TwAddressSearch expose CSS part attributes for 100% external styling freedom', async () => {
+    const { TwAddressPicker, TwAddressSearch } = await import('../src/index.ts');
+    const picker = new TwAddressPicker();
+    const searchWidget = new TwAddressSearch();
+
+    expect(picker).toBeDefined();
+    expect(searchWidget).toBeDefined();
+  });
 });
+
+

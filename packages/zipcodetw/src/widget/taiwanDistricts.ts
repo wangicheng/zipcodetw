@@ -317,3 +317,52 @@ export function normalizeCityName(city: string): string {
   if (norm === '嘉義') return '嘉義市';
   return norm;
 }
+
+export function parseCityDistrict(address: string): { city: string; district: string; detail: string } {
+  if (!address) return { city: '', district: '', detail: '' };
+
+  const norm = address.replace(/^台灣|^臺灣/, '').replace(/^台北/, '臺北').replace(/^台中/, '臺中').replace(/^台南/, '臺南').replace(/^台東/, '臺東');
+
+  for (const city of Object.keys(TAIWAN_DISTRICTS)) {
+    let cityMatch = false;
+    let target = address;
+    if (address.startsWith(city)) {
+      cityMatch = true;
+      target = address.slice(city.length);
+    } else if (norm.startsWith(city)) {
+      cityMatch = true;
+      target = norm.slice(city.length);
+    }
+
+    if (cityMatch) {
+      const districts = TAIWAN_DISTRICTS[city];
+      for (const dist of districts) {
+        if (target.startsWith(dist)) {
+          return {
+            city,
+            district: dist,
+            detail: target.slice(dist.length),
+          };
+        }
+      }
+      return { city, district: '', detail: target };
+    }
+  }
+
+  // Also search if district matches directly when city is omitted in search query
+  for (const [city, districts] of Object.entries(TAIWAN_DISTRICTS)) {
+    for (const dist of districts) {
+      if (address.startsWith(dist) || norm.startsWith(dist)) {
+        const target = address.startsWith(dist) ? address.slice(dist.length) : norm.slice(dist.length);
+        return {
+          city,
+          district: dist,
+          detail: target,
+        };
+      }
+    }
+  }
+
+  return { city: '', district: '', detail: address };
+}
+

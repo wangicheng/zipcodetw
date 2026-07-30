@@ -1,26 +1,7 @@
 import type { SearchMatch } from '../core/types.ts';
 import { ZipCodeTw } from '../ZipCodeTw.ts';
-import { normalizeCityName, TAIWAN_DISTRICTS } from './taiwanDistricts.ts';
-
-export type AddressStatus = 'empty' | 'incomplete' | 'need_selection' | 'exact' | 'no_match';
-
-export interface AddressCandidate {
-  zipcode: string;
-  label: string;
-}
-
-export interface AddressChangeEventDetail {
-  city: string;
-  district: string;
-  detail: string;
-  fullAddress: string;
-  zipcode: string;
-  zipcode3: string;
-  status: AddressStatus;
-  isValid: boolean;
-  isExact: boolean;
-  candidates?: AddressCandidate[];
-}
+import { parseCityDistrict } from './taiwanDistricts.ts';
+import type { AddressCandidate, AddressChangeEventDetail, AddressStatus } from './TwAddressPicker.ts';
 
 const CustomElementBase =
   typeof HTMLElement !== 'undefined'
@@ -46,21 +27,17 @@ const CustomElementBase =
         public removeEventListener(_type: string, _listener: any, _options?: any): void {}
       } as unknown as typeof HTMLElement);
 
-export class TwAddressPicker extends CustomElementBase {
+export class TwAddressSearch extends CustomElementBase {
   private zipEngine: ZipCodeTw | null = null;
   private shadow: ShadowRoot;
 
   // DOM references inside Shadow Root
-  private citySelect!: HTMLSelectElement;
-  private districtSelect!: HTMLSelectElement;
   private detailInput!: HTMLInputElement;
   private badgeElement!: HTMLElement;
   private candidateContainer!: HTMLElement;
   private candidateMenu!: HTMLElement;
 
   // Internal state
-  private currentCity = '';
-  private currentDistrict = '';
   private currentDetail = '';
   private selectedZipcode = '';
   private currentMatches: SearchMatch[] = [];
@@ -96,9 +73,6 @@ export class TwAddressPicker extends CustomElementBase {
     }
   }
 
-  /**
-   * Inject or set ZipCodeTw instance programmatically.
-   */
   public set zipCodeTw(engine: ZipCodeTw | null) {
     this.zipEngine = engine;
     this.calculateZipCode();
@@ -108,14 +82,13 @@ export class TwAddressPicker extends CustomElementBase {
     return this.zipEngine;
   }
 
-  /**
-   * Get complete structured result.
-   */
   public get value(): AddressChangeEventDetail {
-    const city = this.currentCity;
-    const district = this.currentDistrict;
-    const detail = this.currentDetail;
-    const fullAddress = `${city}${district}${detail}`.trim();
+    const fullAddress = this.currentDetail.trim();
+    const parsed = fullAddress ? parseCityDistrict(fullAddress) : { city: '', district: '', detail: '' };
+
+    let city = parsed.city;
+    let district = parsed.district;
+    let detail = parsed.detail || fullAddress;
 
     let status: AddressStatus = 'empty';
     let isExact = false;
@@ -123,10 +96,8 @@ export class TwAddressPicker extends CustomElementBase {
     let zipcode = '';
     let candidates: AddressCandidate[] | undefined = undefined;
 
-    if (!this.currentCity || !this.currentDistrict) {
+    if (!fullAddress) {
       status = 'empty';
-    } else if (!this.currentDetail) {
-      status = 'incomplete';
     } else if (this.currentMatches.length === 0) {
       status = 'no_match';
     } else if (this.selectedZipcode) {
@@ -134,9 +105,23 @@ export class TwAddressPicker extends CustomElementBase {
       zipcode = this.selectedZipcode;
       isExact = true;
       isValid = true;
+
+      const topMatch = this.currentMatches.find((m) => m.zipcode === zipcode) || this.currentMatches[0];
+      if (topMatch && (!city || !district)) {
+        const matchParsed = parseCityDistrict(`${topMatch.part1}${topMatch.part2}`);
+        if (!city) city = matchParsed.city;
+        if (!district) district = matchParsed.district;
+      }
     } else {
       status = 'need_selection';
       candidates = this.getCandidates(this.currentMatches);
+
+      const topMatch = this.currentMatches[0];
+      if (topMatch && (!city || !district)) {
+        const matchParsed = parseCityDistrict(`${topMatch.part1}${topMatch.part2}`);
+        if (!city) city = matchParsed.city;
+        if (!district) district = matchParsed.district;
+      }
     }
 
     const zipcode3 = this.getZipcode3(city, district);
@@ -201,38 +186,18 @@ export class TwAddressPicker extends CustomElementBase {
     return items;
   }
 
-  /**
-   * Set address programmatically.
-   */
-  public setAddress(address: { city?: string; district?: string; detail?: string }) {
-    if (address.city !== undefined) {
-      this.currentCity = normalizeCityName(address.city);
-      if (this.citySelect) this.citySelect.value = this.currentCity;
-      this.populateDistricts();
-    }
-    if (address.district !== undefined) {
-      this.currentDistrict = address.district;
-      if (this.districtSelect) this.districtSelect.value = this.currentDistrict;
-    }
-    if (address.detail !== undefined) {
-      this.currentDetail = address.detail;
-      if (this.detailInput) this.detailInput.value = this.currentDetail;
-    }
-    this.calculateZipCode();
-  }
-
   public search(query: string) {
-    this.setAddress({ detail: query });
+    this.currentDetail = query;
+    if (this.detailInput) this.detailInput.value = query;
+    this.selectedZipcode = '';
+    this.calculateZipCode();
+    this.emitChangeEvent();
   }
 
   public clear() {
-    this.currentCity = '';
-    this.currentDistrict = '';
     this.currentDetail = '';
     this.selectedZipcode = '';
     this.currentMatches = [];
-    if (this.citySelect) this.citySelect.value = '';
-    if (this.districtSelect) this.districtSelect.innerHTML = '<option value="">-- 請選擇區域 --</option>';
     if (this.detailInput) this.detailInput.value = '';
     this.calculateZipCode();
     this.emitChangeEvent();
@@ -247,7 +212,7 @@ export class TwAddressPicker extends CustomElementBase {
         this.zipEngine = await ZipCodeTw.create(prefixesUrl, rulesUrl);
         this.calculateZipCode();
       } catch (err) {
-        console.error('TwAddressPicker failed to load ZipCodeTw engine:', err);
+        console.error('TwAddressSearch failed to load ZipCodeTw engine:', err);
       }
     }
   }
@@ -255,7 +220,7 @@ export class TwAddressPicker extends CustomElementBase {
   private updatePlaceholder() {
     if (!this.detailInput) return;
     const customPlaceholder = typeof this.getAttribute === 'function' ? this.getAttribute('placeholder') : null;
-    this.detailInput.placeholder = customPlaceholder || '請輸入門牌地址 (例如: 和平東路三段100號)';
+    this.detailInput.placeholder = customPlaceholder || '請輸入完整地址 (例: 臺北市大安區和平東路三段1號)';
   }
 
   private render() {
@@ -329,13 +294,7 @@ export class TwAddressPicker extends CustomElementBase {
         position: relative;
       }
 
-      .select-group {
-        display: flex;
-        gap: 8px;
-        flex: 0 0 auto;
-      }
-
-      select, input[type="text"] {
+      input[type="text"] {
         padding: 10px 12px;
         font-size: 15px;
         border: 1px solid var(--picker-input-border);
@@ -344,19 +303,10 @@ export class TwAddressPicker extends CustomElementBase {
         color: var(--picker-text);
         outline: none;
         transition: border-color 0.2s, box-shadow 0.2s;
+        width: 100%;
       }
 
-      option {
-        background-color: var(--picker-input-bg);
-        color: var(--picker-text);
-      }
-
-      select {
-        min-width: 110px;
-        cursor: pointer;
-      }
-
-      select:focus-visible, input:focus-visible {
+      input:focus-visible {
         border-color: var(--primary-focus);
         box-shadow: 0 0 0 3px rgba(113, 113, 122, 0.25);
       }
@@ -364,10 +314,6 @@ export class TwAddressPicker extends CustomElementBase {
       .detail-wrapper {
         flex: 1 1 200px;
         min-width: 140px;
-      }
-
-      input[type="text"] {
-        width: 100%;
       }
 
       .badge-wrapper {
@@ -484,17 +430,6 @@ export class TwAddressPicker extends CustomElementBase {
           gap: 8px;
         }
 
-        .select-group {
-          flex: 1 1 100%;
-          width: 100%;
-        }
-
-        select {
-          flex: 1 1 calc(50% - 4px);
-          min-width: 0;
-          font-size: 16px;
-        }
-
         .detail-wrapper {
           flex: 1 1 auto;
           min-width: 0;
@@ -510,22 +445,9 @@ export class TwAddressPicker extends CustomElementBase {
       }
     `;
 
-    const citiesOptions = Object.keys(TAIWAN_DISTRICTS)
-      .map((city) => `<option value="${city}">${city}</option>`)
-      .join('');
-
     this.shadow.innerHTML = `
       <style>${style}</style>
       <div class="picker-container" part="container">
-        <div class="select-group" part="select-group">
-          <select id="citySelect" aria-label="縣市選擇" part="select city-select">
-            <option value="">-- 請選擇縣市 --</option>
-            ${citiesOptions}
-          </select>
-          <select id="districtSelect" aria-label="鄉鎮市區選擇" part="select district-select">
-            <option value="">-- 請選擇區域 --</option>
-          </select>
-        </div>
         <div class="detail-wrapper" part="detail-wrapper">
           <input type="text" id="detailInput" aria-label="詳細地址" part="input detail-input">
         </div>
@@ -541,8 +463,6 @@ export class TwAddressPicker extends CustomElementBase {
       </div>
     `;
 
-    this.citySelect = this.shadow.getElementById('citySelect') as HTMLSelectElement;
-    this.districtSelect = this.shadow.getElementById('districtSelect') as HTMLSelectElement;
     this.detailInput = this.shadow.getElementById('detailInput') as HTMLInputElement;
     this.badgeElement = this.shadow.getElementById('badge') as HTMLElement;
     this.candidateContainer = this.shadow.getElementById('candidatePopover') as HTMLElement;
@@ -552,23 +472,8 @@ export class TwAddressPicker extends CustomElementBase {
   }
 
   private setupEventListeners() {
-    this.citySelect.addEventListener('change', () => {
-      this.currentCity = this.citySelect.value;
-      this.populateDistricts();
-      this.currentDistrict = this.districtSelect.value;
-      this.calculateZipCode();
-      this.emitChangeEvent();
-    });
-
-    this.districtSelect.addEventListener('change', () => {
-      this.currentDistrict = this.districtSelect.value;
-      this.calculateZipCode();
-      this.emitChangeEvent();
-    });
-
     this.detailInput.addEventListener('input', () => {
       this.currentDetail = this.detailInput.value;
-      this.handlePasteAndAddressDetection();
       this.calculateZipCode();
       this.emitChangeEvent();
     });
@@ -589,52 +494,15 @@ export class TwAddressPicker extends CustomElementBase {
     }
   }
 
-  private populateDistricts() {
-    const districts = TAIWAN_DISTRICTS[this.currentCity] || [];
-    if (this.districtSelect) {
-      this.districtSelect.innerHTML = '<option value="">-- 請選擇區域 --</option>' + districts.map((d) => `<option value="${d}">${d}</option>`).join('');
-    }
-    this.currentDistrict = '';
-  }
-
-  private handlePasteAndAddressDetection() {
-    const text = this.currentDetail.trim();
-    if (!text) return;
-
-    for (const city of Object.keys(TAIWAN_DISTRICTS)) {
-      const normalizedCity = city;
-      const alias1 = city.replace('臺', '台');
-      if (text.startsWith(normalizedCity) || text.startsWith(alias1)) {
-        const matchCity = city;
-        const remaining = text.replace(normalizedCity, '').replace(alias1, '');
-        this.currentCity = matchCity;
-        this.citySelect.value = matchCity;
-        this.populateDistricts();
-
-        const districts = TAIWAN_DISTRICTS[matchCity] || [];
-        for (const dist of districts) {
-          if (remaining.startsWith(dist)) {
-            this.currentDistrict = dist;
-            this.districtSelect.value = dist;
-            this.currentDetail = remaining.replace(dist, '').trim();
-            this.detailInput.value = this.currentDetail;
-            break;
-          }
-        }
-        break;
-      }
-    }
-  }
-
   private calculateZipCode() {
     if (!this.zipEngine) {
       this.renderBadgeState('idle', '郵遞區號');
       return;
     }
 
-    const query = `${this.currentCity}${this.currentDistrict}${this.currentDetail}`.trim();
+    const query = this.currentDetail.trim();
 
-    if (!query || !this.currentCity || !this.currentDistrict || !this.currentDetail) {
+    if (!query) {
       this.selectedZipcode = '';
       this.currentMatches = [];
       this.renderBadgeState('idle', '郵遞區號');
@@ -721,8 +589,6 @@ export class TwAddressPicker extends CustomElementBase {
 
   private updateDisabledState() {
     const isDisabled = typeof this.hasAttribute === 'function' ? this.hasAttribute('disabled') : false;
-    if (this.citySelect) this.citySelect.disabled = isDisabled;
-    if (this.districtSelect) this.districtSelect.disabled = isDisabled;
     if (this.detailInput) this.detailInput.disabled = isDisabled;
   }
 
@@ -754,7 +620,7 @@ export class TwAddressPicker extends CustomElementBase {
 
 // Auto register custom element
 if (typeof window !== 'undefined' && typeof customElements !== 'undefined') {
-  if (!customElements.get('tw-address-picker')) {
-    customElements.define('tw-address-picker', TwAddressPicker);
+  if (!customElements.get('tw-address-search')) {
+    customElements.define('tw-address-search', TwAddressSearch);
   }
 }

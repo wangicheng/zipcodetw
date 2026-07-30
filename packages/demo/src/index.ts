@@ -52,19 +52,37 @@ const init = async () => {
 
       <!-- Mode 2: Web Component Demo View (Hidden by default) -->
       <div id="viewWidget" style="display: none;">
-        <section style="padding: 20px; border: 1px solid var(--border-color); border-radius: 12px; background-color: var(--input-bg);">
-          <h3 style="margin-top: 0; color: var(--text-color);">Web Component 表單選取組件 (&lt;tw-address-picker&gt;)</h3>
-          <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 16px;">
-            專為跨框架與各類表單整合設計之 Web Component 組件。支援縣市/區下拉選單、門牌帶入與 3+3 碼對應。
-          </p>
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+          <!-- Mode 1: Search Mode -->
+          <section style="padding: 20px; border: 1px solid var(--border-color); border-radius: 12px; background-color: var(--input-bg);">
+            <h3 style="margin-top: 0; color: var(--text-color);">1. 單欄純字串查詢組件 (&lt;tw-address-search&gt;)</h3>
+            <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 16px;">
+              即插即用純文字輸入模式，自動解析完整地址與連動候選區劃。
+            </p>
 
-          <tw-address-picker id="addressPickerWidget"></tw-address-picker>
+            <tw-address-search id="addressSearchWidget"></tw-address-search>
 
-          <div style="margin-top: 16px; padding: 14px; background: #18181b; color: #f4f4f5; border: 1px solid var(--border-color); border-radius: 8px; font-family: monospace; font-size: 0.85rem; overflow-x: auto;">
-            <div style="color: #a1a1aa; margin-bottom: 6px; font-weight: bold;">[組件即時事件輸出 (address-change event detail)]</div>
-            <pre id="widgetOutput" style="margin: 0; white-space: pre-wrap; word-break: break-all;">{ "status": "等待輸入門牌..." }</pre>
-          </div>
-        </section>
+            <div style="margin-top: 16px; padding: 14px; background: #18181b; color: #f4f4f5; border: 1px solid var(--border-color); border-radius: 8px; font-family: monospace; font-size: 0.85rem; overflow-x: auto;">
+              <div style="color: #a1a1aa; margin-bottom: 6px; font-weight: bold;">[組件即時事件輸出 (address-change event detail)]</div>
+              <pre id="searchOutput" style="margin: 0; white-space: pre-wrap; word-break: break-all;">{ "status": "empty" }</pre>
+            </div>
+          </section>
+
+          <!-- Mode 2: Standard Picker Mode -->
+          <section style="padding: 20px; border: 1px solid var(--border-color); border-radius: 12px; background-color: var(--input-bg);">
+            <h3 style="margin-top: 0; color: var(--text-color);">2. 傳統三階選單模式 (&lt;tw-address-picker&gt;)</h3>
+            <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 16px;">
+              經典縣市/鄉鎮區下拉選單搭配門牌號碼帶入，適合標準結構化表單。
+            </p>
+
+            <tw-address-picker id="addressPickerWidget"></tw-address-picker>
+
+            <div style="margin-top: 16px; padding: 14px; background: #18181b; color: #f4f4f5; border: 1px solid var(--border-color); border-radius: 8px; font-family: monospace; font-size: 0.85rem; overflow-x: auto;">
+              <div style="color: #a1a1aa; margin-bottom: 6px; font-weight: bold;">[組件即時事件輸出 (address-change event detail)]</div>
+              <pre id="widgetOutput" style="margin: 0; white-space: pre-wrap; word-break: break-all;">{ "status": "empty" }</pre>
+            </div>
+          </section>
+        </div>
       </div>
     `;
 
@@ -102,7 +120,20 @@ const init = async () => {
       viewSearch.style.display = 'none';
     });
 
-    // 1. Initialize Web Component Widget Engine
+    // 1. Initialize Mode Search Widget Engine
+    const searchWidget = document.getElementById('addressSearchWidget') as TwAddressPicker;
+    const searchOutput = document.getElementById('searchOutput') as HTMLElement;
+
+    if (searchWidget) {
+      searchWidget.zipCodeTw = zipCodeTw;
+      searchOutput.textContent = JSON.stringify(searchWidget.value, null, 2);
+      searchWidget.addEventListener('address-change', (e: Event) => {
+        const detail = (e as CustomEvent<AddressChangeEventDetail>).detail;
+        searchOutput.textContent = JSON.stringify(detail, null, 2);
+      });
+    }
+
+    // 2. Initialize Standard Picker Widget Engine
     const pickerWidget = document.getElementById('addressPickerWidget') as TwAddressPicker;
     const widgetOutput = document.getElementById('widgetOutput') as HTMLElement;
 
