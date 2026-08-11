@@ -2,6 +2,7 @@ import { AddressQueryService } from './core/AddressQueryService.ts';
 import { AddressSearchEngineOptimized } from './core/AddressSearchEngine.ts';
 import type { AddressNormalizer } from './core/normalizer/AddressNormalizer.ts';
 import type { AddressRanker } from './core/ranker/AddressRanker.ts';
+import { TAIWAN_DISTRICTS, normalizeCityName, parseCityDistrict } from './core/taiwanDistricts.ts';
 import type { Part2Entry, SearchMatch } from './core/types.ts';
 import { decodeFrontCode } from './utils/frontCode.ts';
 
@@ -15,6 +16,28 @@ export class ZipCodeTw {
 
   constructor(service: AddressQueryService) {
     this.service = service;
+  }
+
+  /**
+   * Get all Taiwan cities (e.g. ["臺北市", "新北市", ...])
+   */
+  public static getCities(): string[] {
+    return Object.keys(TAIWAN_DISTRICTS);
+  }
+
+  /**
+   * Get districts by city name (supports alias like "台北" => "臺北市")
+   */
+  public static getDistricts(city: string): string[] {
+    const normCity = normalizeCityName(city);
+    return TAIWAN_DISTRICTS[normCity] || [];
+  }
+
+  /**
+   * Parse city and district from an address string
+   */
+  public static parseCityDistrict(address: string): { city: string; district: string; detail: string } {
+    return parseCityDistrict(address);
   }
 
   /**
@@ -79,4 +102,19 @@ export class ZipCodeTw {
   public search(address: string, threshold?: number): SearchMatch[] {
     return this.service.search(address, threshold);
   }
+
+  /**
+   * Instance helper to get all Taiwan cities.
+   */
+  public getCities(): string[] {
+    return ZipCodeTw.getCities();
+  }
+
+  /**
+   * Instance helper to get districts by city name.
+   */
+  public getDistricts(city: string): string[] {
+    return ZipCodeTw.getDistricts(city);
+  }
 }
+

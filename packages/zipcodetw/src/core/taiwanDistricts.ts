@@ -365,4 +365,3 @@ export function parseCityDistrict(address: string): { city: string; district: st
 
   return { city: '', district: '', detail: address };
 }
-

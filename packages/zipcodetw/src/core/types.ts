@@ -41,6 +41,8 @@ export interface SearchMatch {
   part2Numbers: number[];
   bulkName: string;
   zipcode: string;
+  zipcode3: string;
   ruleCount?: number;
   rangeSize?: number;
 }
+

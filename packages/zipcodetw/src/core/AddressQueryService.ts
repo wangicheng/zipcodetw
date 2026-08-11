@@ -68,6 +68,7 @@ export class AddressQueryService {
               part2Numbers,
               bulkName: entry.bulkName,
               zipcode: entry.zipcode,
+              zipcode3: entry.zipcode.slice(0, 3),
               ruleCount,
               rangeSize,
             });

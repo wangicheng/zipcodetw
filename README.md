@@ -108,76 +108,97 @@ const zipCodeTw = await createZipCodeTw();
 const result = zipCodeTw.search('新竹市東區科學園區力行路');
 ```
 
-### Web Component 表單組件 (`<tw-address-picker>` & `<tw-address-search>`)
+### 使用範例與整合指南 (SDK Integration Examples)
 
-本函式庫內建兩款獨立、即插即用的原生 Web Component 組件（支援 HTML / Vue / React / Angular）：
+本函式庫採用 **Headless（純 UI 邏輯與 API 解耦）** 設計，開發者可以 100% 自由搭配任何 UI 框架 (React, Vue, Svelte, Angular) 或 Vanilla JS/Tailwind CSS 進行整合。
 
-#### 1. 傳統三階下拉選單組件 (`<tw-address-picker>`)
+#### 範例 1：智慧自由地址模糊查詢 (Single-line Search API)
 
-```html
-<script type="module">
-  import 'zipcodetw';
-</script>
-
-<tw-address-picker 
-  prefixes-url="./data/address_prefixes.txt" 
-  rules-url="./data/zipcode_rules.json">
-</tw-address-picker>
-```
-
-#### 2. 單欄純字串查詢組件 (`<tw-address-search>`)
-
-```html
-<tw-address-search 
-  prefixes-url="./data/address_prefixes.txt" 
-  rules-url="./data/zipcode_rules.json"
-  placeholder="請輸入完整地址 (例如: 臺北市大安區和平東路三段1號)">
-</tw-address-search>
-```
-
-#### TypeScript / JavaScript 事件監聽
+傳入完整或部分地址字串，直接獲取精準的 6 碼郵遞區號與解析資訊：
 
 ```typescript
-import { TwAddressPicker, type AddressChangeEventDetail } from 'zipcodetw';
+import { ZipCodeTw } from 'zipcodetw';
 
-const picker = document.querySelector('tw-address-picker') as TwAddressPicker;
+// 初始化 SDK
+const zipCodeTw = await ZipCodeTw.create(
+  './data/address_prefixes.txt',
+  './data/zipcode_rules.json'
+);
 
-picker.addEventListener('address-change', (e: Event) => {
-  const detail = (e as CustomEvent<AddressChangeEventDetail>).detail;
-  console.log(detail.fullAddress); // "臺北市大安區和平東路三段1號"
-  console.log(detail.zipcode);     // "106008" (6碼郵遞區號)
-  console.log(detail.city);        // "臺北市"
-  console.log(detail.district);    // "大安區"
-  console.log(detail.isExact);     // true (是否成功比對到正確郵遞區號)
-});
+// 搜尋地址
+const matches = zipCodeTw.search('臺北市大安區和平東路三段1號');
+
+if (matches.length > 0) {
+  console.log(matches[0].zipcode3);  // "106" (3 碼郵遞區號，直接自結果屬性讀取)
+  console.log(matches[0].zipcode);   // "106008" (6 碼郵遞區號)
+  console.log(matches[0].part1);     // "臺北市大安區和平東路"
+  console.log(matches[0].part2);     // "三段1號"
+}
+
 ```
 
-#### 3. 100% 自由 CSS 樣式與排版自訂 (`::part`)
+#### 範例 2：連動下拉選單 (Cascading Select)
 
-本組件開放內部 Shadow DOM 的 `part` 屬性，外部開發者可利用原生 CSS `::part()` 自由調整任意排版與樣式：
+利用 `ZipCodeTw.getCities()` 與 `ZipCodeTw.getDistricts(city)` 快速實現縣市/鄉鎮區連動表單：
 
-```css
-/* 自訂容器外觀與外距 */
-tw-address-picker::part(container) {
-  border-radius: 12px;
-}
+```html
+<!-- HTML 結構 -->
+<select id="city-select"></select>
+<select id="district-select"></select>
+<input id="detail-input" placeholder="請輸入門牌地址 (例如: 和平東路三段1號)" />
+<span id="zipcode-badge"></span>
 
-/* 自訂縣市/鄉鎮區下拉選單 */
-tw-address-picker::part(city-select),
-tw-address-picker::part(district-select) {
-  font-size: 14px;
-}
+<script type="module">
+  import { ZipCodeTw } from 'zipcodetw';
 
-/* 自訂詳細地址輸入框 */
-tw-address-picker::part(detail-input) {
-  font-size: 15px;
-}
+  const zipCodeTw = await ZipCodeTw.create('./data/address_prefixes.txt', './data/zipcode_rules.json');
+  
+  const citySelect = document.getElementById('city-select');
+  const districtSelect = document.getElementById('district-select');
+  const detailInput = document.getElementById('detail-input');
+  const zipcodeBadge = document.getElementById('zipcode-badge');
 
-/* 自訂郵遞區號 Badge */
-tw-address-picker::part(badge) {
-  font-weight: bold;
-}
+  // 1. 填入縣市選項 ["臺北市", "新北市", ...]
+  const cities = zipCodeTw.getCities();
+  citySelect.innerHTML = cities.map(c => `<option value="${c}">${c}</option>`).join('');
+
+  // 2. 當縣市改變時，動態更新鄉鎮區選單
+  const updateDistricts = () => {
+    const districts = zipCodeTw.getDistricts(citySelect.value);
+    districtSelect.innerHTML = districts.map(d => `<option value="${d}">${d}</option>`).join('');
+    updateZipcode();
+  };
+
+  // 3. 輸入門牌時即時計算 6 碼郵遞區號
+  const updateZipcode = () => {
+    const fullAddress = `${citySelect.value}${districtSelect.value}${detailInput.value}`;
+    const [match] = zipCodeTw.search(fullAddress);
+    zipcodeBadge.textContent = match ? match.zipcode : '無匹配結果';
+  };
+
+  citySelect.addEventListener('change', updateDistricts);
+  districtSelect.addEventListener('change', updateZipcode);
+  detailInput.addEventListener('input', updateZipcode);
+
+  // 初始化
+  updateDistricts();
+</script>
 ```
+
+#### 輔助工具 API
+
+```typescript
+// 取得所有台灣縣市清單
+const cities = ZipCodeTw.getCities();
+
+// 取得指定縣市的鄉鎮區清單 (支援 "台北"、"新北" 等別名輸入)
+const districts = ZipCodeTw.getDistricts('台北'); // ["中正區", "大同區", ...]
+
+// 解析地址字串為縣市、鄉鎮區與剩餘門牌
+const parsed = ZipCodeTw.parseCityDistrict('台北市大安區和平東路三段1號');
+// { city: '臺北市', district: '大安區', detail: '和平東路三段1號' }
+```
+
 
 ## 專案結構
 
