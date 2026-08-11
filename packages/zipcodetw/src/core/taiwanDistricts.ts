@@ -321,7 +321,12 @@ export function normalizeCityName(city: string): string {
 export function parseCityDistrict(address: string): { city: string; district: string; detail: string } {
   if (!address) return { city: '', district: '', detail: '' };
 
-  const norm = address.replace(/^台灣|^臺灣/, '').replace(/^台北/, '臺北').replace(/^台中/, '臺中').replace(/^台南/, '臺南').replace(/^台東/, '臺東');
+  const norm = address
+    .replace(/^台灣|^臺灣/, '')
+    .replace(/^台北/, '臺北')
+    .replace(/^台中/, '臺中')
+    .replace(/^台南/, '臺南')
+    .replace(/^台東/, '臺東');
 
   for (const city of Object.keys(TAIWAN_DISTRICTS)) {
     let cityMatch = false;

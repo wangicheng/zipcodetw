@@ -1,12 +1,9 @@
 {
-  "name": "zipcodetw-data-crawler",
+  "name": "zipcodetw-data-fetcher",
   "version": "1.0.0",
   "type": "module",
   "private": true,
   "scripts": {
     "download": "bun download.ts"
-  },
-  "dependencies": {
-    "jimp": "^1.6.0"
   }
 }

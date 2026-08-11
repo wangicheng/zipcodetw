@@ -160,7 +160,7 @@ class AddressVisitor extends BaseCstVisitor {
 
     if (modifier === '單') modifier = 'odd';
     else if (modifier === '雙') modifier = 'even';
-    else if (modifier === '連') modifier = undefined;
+    else if (modifier === '連') modifier = '連';
 
     if (ctx.Modifier && !ctx.expression) {
       return { modifier, op: 'parity_all' };
@@ -190,12 +190,14 @@ class AddressVisitor extends BaseCstVisitor {
     if (ctx.KwSubMore) {
       subMode = 'more';
     } else if (ctx.KwSubAll) {
-      subMode = 'all';
+      subMode = 'sub_all';
       if (ctx.KwBound) {
         const bound = ctx.KwBound[0].image;
         if (bound === '以上') op = 'min';
         else if (bound === '以下') op = 'max';
       }
+    } else if (ctx.KwAll) {
+      subMode = 'all';
     } else if (ctx.KwBound) {
       const bound = ctx.KwBound[0].image;
       if (bound === '以上') op = 'min';
@@ -284,8 +286,15 @@ class Transformer {
         endArr.unshift(start.main);
       }
 
-      // Collect path values
-      if (op === 'exact' && !modifier) {
+      // Fill missing sub-number 0 if start has no sub and end has sub (e.g. 342號至342之1號 -> [342, 0] to [342, 1])
+      if (op === 'range' && end && start.main !== null && start.sub === null && end.sub !== null) {
+        if (start.main === end.main || end.main === null) {
+          startArr.push(0);
+        }
+      }
+
+      // Collect path values if simple unitless exact values
+      if (op === 'exact' && !modifier && !start.unit && !subMode) {
         pathValues.push(...startArr);
         continue;
       }
@@ -294,6 +303,15 @@ class Transformer {
       if (pathValues.length > 0) {
         this.flushPathValues(result, pathValues);
         pathValues = [];
+      }
+
+      // Exact match with unit or subMode (e.g., 23號, 346巷全)
+      if (op === 'exact' && !modifier && (start.unit || subMode)) {
+        const rule: AddressRule = { value: startArr };
+        if (start.unit) rule.unit = start.unit;
+        if (subMode) rule.subMode = subMode;
+        result.push(rule);
+        continue;
       }
 
       // Prefix compression
@@ -315,6 +333,9 @@ class Transformer {
 
       const rule: AddressRule = {};
       if (modifier) rule.parity = modifier;
+      if (start && start.unit) rule.unit = start.unit;
+      if (end && end.unit && end.unit !== start?.unit) rule.endUnit = end.unit;
+      if (subMode) rule.subMode = subMode;
 
       if (op === 'range') {
         if (startArr.length > 0) rule.min = startArr;
@@ -349,7 +370,7 @@ class Transformer {
   }
 
   private isPureValueNode(node: AddressRule): boolean {
-    return !!node.value && !node.min && !node.max && !node.parity;
+    return !!node.value && !node.min && !node.max && !node.parity && !node.unit && !node.subMode;
   }
 
   private numToArray(nv: NumberValue): number[] {

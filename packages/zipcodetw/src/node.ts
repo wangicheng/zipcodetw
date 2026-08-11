@@ -1,34 +1,30 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ADDRESS_PREFIXES_PATH, ZIPCODE_RULES_PATH } from './core/constants.ts';
-import type { Part2Entry } from './core/types.ts';
 import { ZipCodeTw, type ZipCodeTwOptions } from './ZipCodeTw.ts';
 
-async function loadFile(filePath: string): Promise<string> {
+async function loadBufferFile(filePath: string): Promise<Uint8Array> {
   const candidates = [filePath, path.resolve(import.meta.dirname, '../', filePath), path.resolve(import.meta.dirname, '../data', path.basename(filePath))];
 
   for (const candidate of candidates) {
     try {
       await fs.access(candidate);
-      return await fs.readFile(candidate, 'utf-8');
+      const buf = await fs.readFile(candidate);
+      return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
     } catch {}
   }
 
-  throw new Error(`File not found: ${filePath} (checked candidates: ${candidates.join(', ')})`);
+  throw new Error(`Buffer file not found: ${filePath} (checked candidates: ${candidates.join(', ')})`);
 }
 
 /**
- * Node.js helper to create ZipCodeTw instance from local file system.
- * Useful for testing or server-side usage.
+ * Node.js helper to create ZipCodeTw instance using binary assets for 100% zero-expansion memory efficiency.
  */
 export async function createZipCodeTw(
   prefixesPath: string = ADDRESS_PREFIXES_PATH,
   rulesPath: string = ZIPCODE_RULES_PATH,
   options?: ZipCodeTwOptions,
 ): Promise<ZipCodeTw> {
-  const prefixesContent = await loadFile(prefixesPath);
-  const rulesContent = await loadFile(rulesPath);
-  const rulesData: Part2Entry[] = JSON.parse(rulesContent);
-
-  return ZipCodeTw.fromData(prefixesContent, rulesData, options);
+  const [binaryPrefixes, binaryRules] = await Promise.all([loadBufferFile(prefixesPath), loadBufferFile(rulesPath)]);
+  return ZipCodeTw.fromBinary(binaryPrefixes, binaryRules, options);
 }

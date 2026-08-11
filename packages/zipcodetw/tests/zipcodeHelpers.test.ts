@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { TAIWAN_DISTRICTS, ZipCodeTw, normalizeCityName, parseCityDistrict } from '../src/index.ts';
+import { ZipCodeTw, normalizeCityName, parseCityDistrict } from '../src/index.ts';
 import { createZipCodeTw } from '../src/node.ts';
 
 describe('ZipCodeTw Core Helpers Tests', () => {
@@ -43,4 +43,3 @@ describe('ZipCodeTw Core Helpers Tests', () => {
     expect(matches[0].zipcode.startsWith('106')).toBe(true);
   });
 });
-

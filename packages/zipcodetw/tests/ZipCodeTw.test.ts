@@ -20,3 +20,19 @@ test('ZipCodeTw High-Level Interface', async () => {
 
   console.log(`Found ${matches.length} matches via ZipCodeTw interface`);
 });
+
+test('Should correctly match 屏東縣屏東市貴陽街2號 to exact main number rule 2號 (900009)', async () => {
+  const zipCodeTw = await createZipCodeTw();
+
+  // Test main number 2號
+  const matches2 = zipCodeTw.search('屏東縣屏東市貴陽街2號');
+  expect(matches2.length).toBeGreaterThan(0);
+  expect(matches2[0].zipcode).toBe('900009');
+  expect(matches2[0].part2).toBe('2號');
+
+  // Test sub number 2之1號
+  const matches2sub = zipCodeTw.search('屏東縣屏東市貴陽街2之1號');
+  expect(matches2sub.length).toBeGreaterThan(0);
+  expect(matches2sub[0].zipcode).toBe('900012');
+  expect(matches2sub[0].part2).toBe('2之1號至之4號');
+});

@@ -22,7 +22,7 @@ const init = async () => {
 
   try {
     console.time('Init ZipCodeTw Engine');
-    const zipCodeTw = await ZipCodeTw.create('./data/address_prefixes.txt', './data/zipcode_rules.json');
+    const zipCodeTw = await ZipCodeTw.create('./data/address_prefixes.bin', './data/zipcode_rules.bin');
     console.timeEnd('Init ZipCodeTw Engine');
 
     container.innerHTML = `
@@ -90,7 +90,7 @@ const init = async () => {
             <summary style="cursor: pointer; font-weight: bold; font-size: 0.9rem;">查看程式碼實作範例 (Vanilla JS)</summary>
             <pre style="margin-top: 10px; padding: 14px; background: #18181b; color: #f4f4f5; border-radius: 8px; font-family: monospace; font-size: 0.85rem; overflow-x: auto;">
 // 1. 初始化載入 SDK
-const zipCodeTw = await ZipCodeTw.create('./data/address_prefixes.txt', './data/zipcode_rules.json');
+const zipCodeTw = await ZipCodeTw.create('./data/address_prefixes.bin', './data/zipcode_rules.bin');
 
 // 2. 填入縣市選項
 const cities = zipCodeTw.getCities(); // ["臺北市", "新北市", ...]

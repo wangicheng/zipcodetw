@@ -1,43 +1,41 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
 import { AddressQueryService } from '../src/core/AddressQueryService';
-import { AddressSearchEngineOptimized } from '../src/core/AddressSearchEngine';
+import { BinaryPrefixSearchEngine } from '../src/core/BinaryPrefixSearchEngine';
+import { BinaryRuleStore } from '../src/core/BinaryRuleStore';
+import { buildBinaryPrefixes, buildBinaryRules } from '../scripts/utils/binaryEncoders';
 import type { Part2Entry } from '../src/core/types';
 
 describe('AddressQueryService Unit Tests', () => {
-  let mockEngine: AddressSearchEngineOptimized;
-  let mockPart2Data: Part2Entry[];
   let service: AddressQueryService;
 
   beforeEach(() => {
-    // Mock the engine. Since it's a class, we can just instantiate it with dummy data
-    // or we could mock the prototype if needed.
-    // For simplicity, we use a real instance with controlled small data.
-    // NOTE: The service normalizes '台' to '臺', so our engine data must use '臺' to match.
-    const part1Data = `臺北市大安區和平東路三段\n新北市板橋區文化路`;
-    mockEngine = new AddressSearchEngineOptimized(part1Data);
+    const part1List = ['臺北市大安區和平東路三段', '新北市板橋區文化路'];
+    const binPrefixBuf = buildBinaryPrefixes(part1List);
+    const mockEngine = new BinaryPrefixSearchEngine(binPrefixBuf);
 
-    // Mock Part2 Data (Zipcode Rules)
-    // Rule: Anything under 和平東路三段 gets zipcode 106
-    mockPart2Data = [
+    const mockPart2Data: Part2Entry[] = [
       {
         id: 1,
-        part1Index: 0, // 臺北市大安區和平東路三段 (Index 0 in engine)
-        zipcode: '106',
-        rules: [], // No extra rules means match all
+        part1Index: 0,
+        zipcode: '106001',
+        rules: [],
         range: '全',
         bulkName: '',
       },
       {
         id: 2,
-        part1Index: 1, // 新北市板橋區文化路 (Index 1 in engine)
-        zipcode: '220',
-        rules: [{ value: [1] }], // Address 1 only
+        part1Index: 1,
+        zipcode: '220001',
+        rules: [{ value: [1] }],
         range: '1號',
         bulkName: '',
       },
     ];
 
-    service = new AddressQueryService(mockEngine, mockPart2Data);
+    const binRulesBuf = buildBinaryRules(mockPart2Data);
+    const mockStore = new BinaryRuleStore(binRulesBuf);
+
+    service = new AddressQueryService(mockEngine, mockStore);
   });
 
   test('should normalize chinese numerals in part1', () => {
@@ -46,7 +44,7 @@ describe('AddressQueryService Unit Tests', () => {
     // Should match index 0
     const matches = service.search('臺北市大安區和平東路３段');
     expect(matches.length).toBeGreaterThan(0);
-    expect(matches[0].zipcode).toBe('106');
+    expect(matches[0].zipcode).toBe('106001');
   });
 
   test('should parse chinese numerals in part2', () => {
@@ -54,7 +52,7 @@ describe('AddressQueryService Unit Tests', () => {
     // "一號" -> 1
     const matches = service.search('新北市板橋區文化路一號');
     expect(matches.length).toBeGreaterThan(0);
-    expect(matches[0].zipcode).toBe('220');
+    expect(matches[0].zipcode).toBe('220001');
     expect(matches[0].part2Numbers).toEqual([1]);
   });
 
@@ -62,7 +60,7 @@ describe('AddressQueryService Unit Tests', () => {
     // Input: 新北市板橋區文化路1號
     const matches = service.search('新北市板橋區文化路1號');
     expect(matches.length).toBeGreaterThan(0);
-    expect(matches[0].zipcode).toBe('220');
+    expect(matches[0].zipcode).toBe('220001');
     expect(matches[0].part2Numbers).toEqual([1]);
   });
 
@@ -78,6 +76,6 @@ describe('AddressQueryService Unit Tests', () => {
     // "台北市大安區和平東路三段" splits into part1="台北市大安區和平東路三段", part2=""
     const matches = service.search('台北市大安區和平東路三段');
     expect(matches.length).toBeGreaterThan(0);
-    expect(matches[0].zipcode).toBe('106');
+    expect(matches[0].zipcode).toBe('106001');
   });
 });

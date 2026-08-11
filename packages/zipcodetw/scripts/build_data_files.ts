@@ -1,90 +1,24 @@
 import fs from 'node:fs/promises';
-import { ADDRESS_PREFIXES_PATH, RAW_ADDRESSES_PATH, ZIPCODE_RULES_PATH } from '../src/core/constants.ts';
-import type { AddressRule, RawAddress } from '../src/core/types.ts';
-import { encodeFrontCode } from '../src/utils/frontCode.ts';
-import { parseAddress } from '../scripts/utils/parseRule.ts';
+import path from 'node:path';
+import { compileBinaryAssets, main as runDbfPipeline } from '../../../tools/data-crawler/fetch_official_dbf.ts';
+import type { RawAddress } from '../src/core/types.ts';
 
 async function main() {
-  console.time('Build Data Files');
-  // Read raw data
-  console.log('Reading raw data...');
-  let data: RawAddress[] = [];
-  try {
-    const content = await fs.readFile(RAW_ADDRESSES_PATH, 'utf-8');
-    data = JSON.parse(content);
-  } catch (err) {
-    console.error(`\n❌ [Build Error] 找不到原始地址檔或 JSON 格式錯誤：${RAW_ADDRESSES_PATH}`);
-    console.error('👉 請先放置符合規格的 raw_addresses.json 檔案（規格請參閱 README.md）。\n');
-    process.exit(1);
+  const customJsonArgIdx = process.argv.indexOf('--json');
+  if (customJsonArgIdx !== -1 && process.argv[customJsonArgIdx + 1]) {
+    const customJsonPath = process.argv[customJsonArgIdx + 1];
+    console.log(`📂 從自訂 JSON 檔案載入地址資料: ${customJsonPath}`);
+    const content = await fs.readFile(customJsonPath, 'utf-8');
+    const customData: RawAddress[] = JSON.parse(content);
+    await compileBinaryAssets(customData);
+    return;
   }
 
-  // Group data so same part1 appear together (O(N) instead of sort O(N log N))
-  const grouped = new Map<string, RawAddress[]>();
-  for (const addr of data) {
-    const key = [addr.city, addr.district, addr.road, addr.section !== '0' ? addr.section : ''].join('');
-
-    const list = grouped.get(key);
-    if (list) {
-      list.push(addr);
-    } else {
-      grouped.set(key, [addr]);
-    }
-  }
-
-  // Flatten back to array
-  const sortedData: RawAddress[] = [];
-  for (const group of grouped.values()) {
-    for (const item of group) {
-      sortedData.push(item);
-    }
-  }
-
-  // Join into a large string (part1)
-  const addressStrings = sortedData.map((addr) => {
-    return [addr.city, addr.district, addr.road, addr.section !== '0' ? addr.section : ''].join('').trim();
-  });
-
-  const part1List = Array.from(new Set(addressStrings.filter(Boolean)));
-
-  // Generate Address Prefixes (FC)
-  console.log('Generating Address Prefixes (Front Coding)...');
-  const fcContent = encodeFrontCode(part1List);
-  await fs.writeFile(ADDRESS_PREFIXES_PATH, fcContent, 'utf-8');
-  console.log(`檔案已產生：${ADDRESS_PREFIXES_PATH}`);
-
-  // Build index map
-  const addressToIndex = new Map(part1List.map((addr, i) => [addr, i]));
-
-  // Process part2
-  const part2Data = sortedData.map((addr, i) => {
-    const addrStr = addressStrings[i];
-    const part1Index = addressToIndex.get(addrStr) ?? -1;
-
-    // Parse range string
-    let Rules: AddressRule[] = [];
-    try {
-      Rules = parseAddress(addr.range.replaceAll(' ', ''));
-    } catch (e) {
-      console.warn(`Failed to parse range for "${addrStr}": ${addr.range}`, e);
-    }
-
-    return {
-      id: i,
-      part1Index,
-      rules: Rules,
-      range: addr.range.replaceAll(' ', ''),
-      bulkName: addr.bulkName.replaceAll(' ', ''),
-      zipcode: addr.zipcode.replaceAll(' ', ''),
-    };
-  });
-
-  // Generate Zipcode Rules (JSON)
-  console.log('Generating Zipcode Rules (JSON)...');
-  const rawRulesContent = JSON.stringify(part2Data);
-  await fs.writeFile(ZIPCODE_RULES_PATH, rawRulesContent, 'utf-8');
-  console.log(`檔案已產生：${ZIPCODE_RULES_PATH}`);
-
-  console.timeEnd('Build Data Files');
+  // Default: Direct end-to-end memory pipeline from DBF to binary assets
+  await runDbfPipeline();
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  console.error('❌ 二進制資料編譯發生錯誤:', err);
+  process.exit(1);
+});

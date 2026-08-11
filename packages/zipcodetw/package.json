@@ -19,8 +19,8 @@
   },
   "files": [
     "src",
-    "data/address_prefixes.txt",
-    "data/zipcode_rules.json"
+    "data/address_prefixes.bin",
+    "data/zipcode_rules.bin"
   ],
   "scripts": {
     "build:data": "bun scripts/build_data_files.ts",

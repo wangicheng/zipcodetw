@@ -1,5 +1,6 @@
-import { matchAddress } from './AddressMatcher.ts';
-import type { AddressSearchEngineOptimized } from './AddressSearchEngine.ts';
+import type { BinaryPrefixSearchEngine } from './BinaryPrefixSearchEngine.ts';
+import { BinaryRuleStore } from './BinaryRuleStore.ts';
+import { formatAddressRule } from './formatRule.ts';
 import type { AddressNormalizer } from './normalizer/AddressNormalizer.ts';
 import { DefaultAddressNormalizer } from './normalizer/AddressNormalizer.ts';
 import type { AddressRanker } from './ranker/AddressRanker.ts';
@@ -7,27 +8,32 @@ import { PostalDeliveryRanker } from './ranker/AddressRanker.ts';
 import type { Part2Entry, SearchMatch } from './types.ts';
 
 export class AddressQueryService {
-  private engine: AddressSearchEngineOptimized;
-  private part2Data: Part2Entry[];
+  private engine: BinaryPrefixSearchEngine;
+  private binaryStore: BinaryRuleStore;
   private normalizer: AddressNormalizer;
   private ranker: AddressRanker;
 
   constructor(
-    engine: AddressSearchEngineOptimized,
-    part2Data: Part2Entry[],
+    engine: BinaryPrefixSearchEngine,
+    binaryRules: BinaryRuleStore | ArrayBuffer | Uint8Array,
     normalizer: AddressNormalizer = new DefaultAddressNormalizer(),
     ranker: AddressRanker = new PostalDeliveryRanker(),
   ) {
     this.engine = engine;
-    this.part2Data = part2Data;
     this.normalizer = normalizer;
     this.ranker = ranker;
+
+    if (binaryRules instanceof BinaryRuleStore) {
+      this.binaryStore = binaryRules;
+    } else {
+      this.binaryStore = new BinaryRuleStore(binaryRules);
+    }
   }
 
   public search(searchInput: string, threshold: number = 1000): SearchMatch[] {
     const normalizedInput = this.normalizer.normalize(searchInput);
     const allMatches: SearchMatch[] = [];
-    const matchedEntries = new Set<number>();
+    const matchedEntriesSet = new Set<number>();
 
     for (let splitIndex = normalizedInput.length; splitIndex >= 1; splitIndex--) {
       const part1 = normalizedInput.slice(0, splitIndex);
@@ -46,29 +52,31 @@ export class AddressQueryService {
       const part2Converted = this.normalizer.convertPart2(part2);
 
       const matches = this.engine.search(part1Converted);
-
       const part2Numbers = part2Converted.match(/\d+/g)?.map((n) => parseInt(n, 10)) || [];
 
       for (const match of matches) {
         const splitMatches: SearchMatch[] = [];
+        const entryIndices = this.binaryStore.searchEntriesByPart1(match.index);
 
-        const relevantEntries = this.getRelatedEntries(match.index);
+        for (const entryIdx of entryIndices) {
+          if (matchedEntriesSet.has(entryIdx)) continue;
 
-        for (const entry of relevantEntries) {
-          if (matchedEntries.has(entry.id)) continue;
+          if (this.binaryStore.matchAddressBinary(part2Numbers, entryIdx)) {
+            const decodedRules = this.binaryStore.decodeEntryRules(entryIdx);
+            const ruleCount = decodedRules.length;
+            const rangeSize = this.calculateRangeSize(decodedRules);
+            const zipcode = this.binaryStore.getZipcode(this.binaryStore.getEntryZipcodeId(entryIdx));
+            const bulkName = this.binaryStore.getBulkName(this.binaryStore.getEntryBulkNameId(entryIdx));
+            const range = formatAddressRule(decodedRules);
 
-          if (matchAddress(part2Numbers, entry.rules)) {
-            const ruleCount = entry.rules.length;
-            const rangeSize = this.calculateRangeSize(entry.rules);
-
-            matchedEntries.add(entry.id);
+            matchedEntriesSet.add(entryIdx);
             splitMatches.push({
               part1: match.text,
-              part2: entry.range,
+              part2: range,
               part2Numbers,
-              bulkName: entry.bulkName,
-              zipcode: entry.zipcode,
-              zipcode3: entry.zipcode.slice(0, 3),
+              bulkName: bulkName || '',
+              zipcode,
+              zipcode3: zipcode.slice(0, 3),
               ruleCount,
               rangeSize,
             });
@@ -89,33 +97,6 @@ export class AddressQueryService {
       }
     }
     return allMatches;
-  }
-
-  private getRelatedEntries(part1Index: number): Part2Entry[] {
-    let left = 0,
-      right = this.part2Data.length - 1;
-    while (left <= right) {
-      const mid = (left + right) >>> 1;
-      if (this.part2Data[mid].part1Index < part1Index) {
-        left = mid + 1;
-      } else {
-        right = mid - 1;
-      }
-    }
-
-    if (left >= this.part2Data.length || this.part2Data[left].part1Index !== part1Index) {
-      return [];
-    }
-
-    const results: Part2Entry[] = [];
-    for (let i = left; i < this.part2Data.length; i++) {
-      if (this.part2Data[i].part1Index === part1Index) {
-        results.push(this.part2Data[i]);
-      } else {
-        break;
-      }
-    }
-    return results;
   }
 
   private calculateRangeSize(rules: Part2Entry['rules']): number {

@@ -1,10 +1,9 @@
 import { AddressQueryService } from './core/AddressQueryService.ts';
-import { AddressSearchEngineOptimized } from './core/AddressSearchEngine.ts';
+import { BinaryPrefixSearchEngine } from './core/BinaryPrefixSearchEngine.ts';
 import type { AddressNormalizer } from './core/normalizer/AddressNormalizer.ts';
 import type { AddressRanker } from './core/ranker/AddressRanker.ts';
 import { TAIWAN_DISTRICTS, normalizeCityName, parseCityDistrict } from './core/taiwanDistricts.ts';
-import type { Part2Entry, SearchMatch } from './core/types.ts';
-import { decodeFrontCode } from './utils/frontCode.ts';
+import type { SearchMatch } from './core/types.ts';
 
 export interface ZipCodeTwOptions {
   normalizer?: AddressNormalizer;
@@ -26,11 +25,25 @@ export class ZipCodeTw {
   }
 
   /**
+   * Instance helper to get all Taiwan cities.
+   */
+  public getCities(): string[] {
+    return ZipCodeTw.getCities();
+  }
+
+  /**
    * Get districts by city name (supports alias like "台北" => "臺北市")
    */
   public static getDistricts(city: string): string[] {
     const normCity = normalizeCityName(city);
     return TAIWAN_DISTRICTS[normCity] || [];
+  }
+
+  /**
+   * Instance helper to get districts by city name.
+   */
+  public getDistricts(city: string): string[] {
+    return ZipCodeTw.getDistricts(city);
   }
 
   /**
@@ -41,55 +54,31 @@ export class ZipCodeTw {
   }
 
   /**
-   * Helper to fetch text from a URL.
-   */
-  private static async fetchText(url: string): Promise<string> {
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`Failed to fetch: ${url} (${res.status} ${res.statusText})`);
-    }
-
-    return await res.text();
-  }
-
-  /**
-   * Initialize using URLs (Browser friendly).
-   * Fetches data and initializes the service.
+   * Initialize using URLs (Browser friendly) loading binary assets.
    *
-   * @param prefixesUrl URL to address_prefixes file (e.g. "data/address_prefixes.txt")
-   * @param rulesUrl URL to zipcode_rules file (e.g. "data/zipcode_rules.json")
+   * @param prefixesUrl URL to address_prefixes.bin file
+   * @param rulesUrl URL to zipcode_rules.bin file
    * @param options Optional custom normalizer or ranker
    */
   public static async create(prefixesUrl: string, rulesUrl: string, options?: ZipCodeTwOptions): Promise<ZipCodeTw> {
-    const [prefixesContent, rulesJsonStr] = await Promise.all([ZipCodeTw.fetchText(prefixesUrl), ZipCodeTw.fetchText(rulesUrl)]);
-
-    let part2Data: Part2Entry[];
-    try {
-      part2Data = JSON.parse(rulesJsonStr);
-    } catch {
-      throw new Error('Failed to parse rules JSON');
+    const [prefixesRes, rulesRes] = await Promise.all([fetch(prefixesUrl), fetch(rulesUrl)]);
+    if (!prefixesRes.ok || !rulesRes.ok) {
+      throw new Error(`Failed to fetch binary assets: ${prefixesUrl}, ${rulesUrl}`);
     }
-
-    return ZipCodeTw.fromData(prefixesContent, part2Data, options);
+    const [binaryPrefixes, binaryRules] = await Promise.all([prefixesRes.arrayBuffer(), rulesRes.arrayBuffer()]);
+    return ZipCodeTw.fromBinary(binaryPrefixes, binaryRules, options);
   }
 
   /**
-   * Initialize using pre-loaded data.
+   * Initialize using pre-loaded binary buffers for zero-expansion memory efficiency.
    *
-   * @param prefixesContent content of address_prefixes (can be FrontCode encoded)
-   * @param rulesData parsed content of zipcode_rules (Part2Entry array)
+   * @param binaryPrefixes ArrayBuffer or Uint8Array of address_prefixes.bin
+   * @param binaryRules ArrayBuffer or Uint8Array of zipcode_rules.bin
    * @param options Optional custom normalizer or ranker
    */
-  public static fromData(prefixesContent: string, rulesData: Part2Entry[], options?: ZipCodeTwOptions): ZipCodeTw {
-    // Decode Front Code if applicable
-    const expandedPrefixes = decodeFrontCode(prefixesContent);
-
-    // Initialize Engine
-    const engine = new AddressSearchEngineOptimized(expandedPrefixes);
-
-    // Initialize Service with optional normalizer/ranker
-    const service = new AddressQueryService(engine, rulesData, options?.normalizer, options?.ranker);
-
+  public static fromBinary(binaryPrefixes: ArrayBuffer | Uint8Array, binaryRules: ArrayBuffer | Uint8Array, options?: ZipCodeTwOptions): ZipCodeTw {
+    const engine = new BinaryPrefixSearchEngine(binaryPrefixes);
+    const service = new AddressQueryService(engine, binaryRules, options?.normalizer, options?.ranker);
     return new ZipCodeTw(service);
   }
 
@@ -102,19 +91,4 @@ export class ZipCodeTw {
   public search(address: string, threshold?: number): SearchMatch[] {
     return this.service.search(address, threshold);
   }
-
-  /**
-   * Instance helper to get all Taiwan cities.
-   */
-  public getCities(): string[] {
-    return ZipCodeTw.getCities();
-  }
-
-  /**
-   * Instance helper to get districts by city name.
-   */
-  public getDistricts(city: string): string[] {
-    return ZipCodeTw.getDistricts(city);
-  }
 }
-

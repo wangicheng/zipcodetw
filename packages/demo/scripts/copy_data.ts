@@ -11,7 +11,6 @@ async function copyData() {
 
   const files = await fs.readdir(srcDir);
   for (const file of files) {
-    if (file === 'raw_addresses.json') continue; // Don't copy raw address JSON
     const srcFile = path.join(srcDir, file);
     const destFile = path.join(destDir, file);
     await fs.copyFile(srcFile, destFile);

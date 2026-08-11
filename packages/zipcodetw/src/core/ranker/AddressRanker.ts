@@ -14,16 +14,16 @@ export class PostalDeliveryRanker implements AddressRanker {
       if (a.part1.length !== b.part1.length) {
         return b.part1.length - a.part1.length;
       }
-      // 2. More rules (deeper specificity) First
-      const rcA = a.ruleCount ?? 0;
-      const rcB = b.ruleCount ?? 0;
-      if (rcA !== rcB) {
-        return rcB - rcA;
-      }
-      // 3. Smaller Range First
+      // 2. Smaller Range First (Exact match has smaller rangeSize)
       const rsA = a.rangeSize ?? Number.MAX_VALUE;
       const rsB = b.rangeSize ?? Number.MAX_VALUE;
-      return rsA - rsB;
+      if (rsA !== rsB) {
+        return rsA - rsB;
+      }
+      // 3. More rules (deeper specificity) First
+      const rcA = a.ruleCount ?? 0;
+      const rcB = b.ruleCount ?? 0;
+      return rcB - rcA;
     });
   }
 }

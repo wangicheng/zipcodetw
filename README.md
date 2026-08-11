@@ -23,7 +23,7 @@ ZipCodeTw 是一個專為台灣地址設計的郵遞區號解析函式庫。它�
   - **Browser**：支援純前端離線查詢，可透過 Web 伺服器 / CDN 標頭（Content-Encoding: br / gzip）輕鬆達成極小傳輸。
   - **Server**：支援 Node.js 與 Bun，適合高併發 API 服務。
 - **高效資料建置**：
-  - 輸入結構化的原始地址 JSON 檔（`raw_addresses.json`），經由編譯命令自動轉譯產出極小化之 Front Coding 前綴檔與 AST 規則索引檔。
+  - 由中華郵政官方 DBF 資料檔經由編譯命令自動轉譯產出極小化之二進制 Front Coding 前綴檔與位元規則索引檔。
 
 
 ## 資料建置與流程
@@ -34,53 +34,9 @@ ZipCodeTw 是一個專為台灣地址設計的郵遞區號解析函式庫。它�
 # 1. 安裝相依套件
 bun install
 
-# 2. 準備原始地址 JSON 檔
-# 將符合格式的原始地址資料放置於 packages/zipcodetw/data/raw_addresses.json
-
-# 3. 建置壓縮索引與規則檔 (產出 address_prefixes.txt 與 zipcode_rules.json)
+# 2. 建置二進制壓縮索引與規則檔 (產出 address_prefixes.bin 與 zipcode_rules.bin)
 bun run build:data
 ```
-
-## 原始地址資料規格 (raw_addresses.json)
-
-`raw_addresses.json` 為建置指令 `bun run build:data` 的唯一輸入介面，該 JSON 檔案須為 `RawAddress` 物件構成的陣列：
-
-### JSON 結構範例
-
-```json
-[
-  {
-    "city": "基隆市",
-    "district": "七堵區",
-    "road": "光明路",
-    "section": "0",
-    "range": "單  21號至  23號",
-    "bulkName": "行政大樓",
-    "zipcode": "206216"
-  },
-  {
-    "city": "臺北市",
-    "district": "大安區",
-    "road": "和平東路",
-    "section": "3",
-    "range": "全",
-    "bulkName": "",
-    "zipcode": "106008"
-  }
-]
-```
-
-### 欄位規格說明
-
-| 欄位名稱 (Field) | 型態 (Type) | 必填 | 說明與範例 |
-| :--- | :--- | :---: | :--- |
-| `city` | `string` | 是 | 縣市名稱（例：`"臺北市"`、`"基隆市"`） |
-| `district` | `string` | 是 | 鄉鎮市區名稱（例：`"大安區"`、`"七堵區"`） |
-| `road` | `string` | 是 | 路街名稱（例：`"和平東路"`、`"光明路"`） |
-| `section` | `string` | 是 | 段別（若無段別請固定填 `"0"`，例：`"3"` 或 `"0"`） |
-| `range` | `string` | 是 | 門牌投遞範圍規則描述（例：`"全"`、`"單  21號至  23號"`、`"雙 100號以下"`） |
-| `bulkName` | `string` | 是 | 大宗戶/機構/大樓名稱（若無則填空字串 `""`，例：`"行政大樓"`） |
-| `zipcode` | `string` | 是 | 6 碼郵遞區號字串（例：`"106008"`、`"206216"`） |
 
 ## 快速上手
 
@@ -89,10 +45,10 @@ bun run build:data
 ```typescript
 import { ZipCodeTw } from 'zipcodetw';
 
-// 透過 URL 載入資料檔
+// 透過 URL 載入二進制資料檔
 const zipCodeTw = await ZipCodeTw.create(
-  './data/address_prefixes.txt',
-  './data/zipcode_rules.json'
+  './data/address_prefixes.bin',
+  './data/zipcode_rules.bin'
 );
 
 const matches = zipCodeTw.search('台北市大安區和平東路三段');
@@ -121,8 +77,8 @@ import { ZipCodeTw } from 'zipcodetw';
 
 // 初始化 SDK
 const zipCodeTw = await ZipCodeTw.create(
-  './data/address_prefixes.txt',
-  './data/zipcode_rules.json'
+  './data/address_prefixes.bin',
+  './data/zipcode_rules.bin'
 );
 
 // 搜尋地址
@@ -151,7 +107,7 @@ if (matches.length > 0) {
 <script type="module">
   import { ZipCodeTw } from 'zipcodetw';
 
-  const zipCodeTw = await ZipCodeTw.create('./data/address_prefixes.txt', './data/zipcode_rules.json');
+  const zipCodeTw = await ZipCodeTw.create('./data/address_prefixes.bin', './data/zipcode_rules.bin');
   
   const citySelect = document.getElementById('city-select');
   const districtSelect = document.getElementById('district-select');
@@ -217,7 +173,9 @@ zipcodetw/
 
 | 指令 | 說明 |
 |------|------|
-| `bun run build:data` | 讀取 `raw_addresses.json`，進行 Front Coding 編碼與 AST 規則結構化 |
+| `bun run fetch:data` | 執行爬蟲重新下載中華郵政官方 DBF 資料庫並解析為原始對照檔 |
+| `bun run build:data` | 讀取門牌資料，進行二進制 Front Coding 與 Bitmask 規則編譯 |
+| `bun run update:data` | 完整更新管線：下載官方 DBF 資料並重新編譯為二進制索引資產 |
 | `bun test` | 執行核心單元測試 (包含 Parser、搜尋邏輯驗證) |
 | `bun run dev` | 在 `packages/demo` 啟動靜態展示網頁開發伺服器 |
 | `bun run build` | 完整建置核心資料檔與 Demo 靜態網站 |

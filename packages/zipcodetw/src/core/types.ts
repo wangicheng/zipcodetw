@@ -1,4 +1,10 @@
 export interface AddressRule {
+  /** Segment unit ('巷' | '弄' | '衖' | '號' | '樓' | '附號' etc.) */
+  unit?: string;
+  /** End segment unit if different from start unit (e.g. '巷至號' -> unit: '巷', endUnit: '號') */
+  endUnit?: string;
+  /** Sub mode ('all' | 'more' etc.) */
+  subMode?: string;
   /** Exact match path value */
   value?: number[];
   /** Min value constraint (Range Start) */
@@ -45,4 +51,3 @@ export interface SearchMatch {
   ruleCount?: number;
   rangeSize?: number;
 }
-
