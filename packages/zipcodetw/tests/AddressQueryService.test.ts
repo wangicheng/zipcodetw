@@ -78,4 +78,10 @@ describe('AddressQueryService Unit Tests', () => {
     expect(matches.length).toBeGreaterThan(0);
     expect(matches[0].zipcode).toBe('106001');
   });
+
+  test('should early exit and return empty array when query contains non-BMP characters (codePoint > 0xFFFF)', () => {
+    // "𨛌" is U+286C4 (codePoint > 0xFFFF)
+    const matches = service.search('𨛌厝10號');
+    expect(matches).toEqual([]);
+  });
 });

@@ -42,6 +42,12 @@ export class BinaryPrefixSearchEngine {
   public search(query: string): Array<{ text: string; index: number }> {
     if (!query) return [];
 
+    for (const char of query) {
+      if ((char.codePointAt(0) ?? 0) > 0xffff) {
+        return [];
+      }
+    }
+
     const lists: Uint16Array[] = [];
     for (let c = 0; c < query.length; c++) {
       const code = query.charCodeAt(c);
