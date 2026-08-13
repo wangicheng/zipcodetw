@@ -20,17 +20,17 @@ function getMemorySnapshot() {
 
 async function main() {
   console.log('====================================================');
-  console.log(' 📊 ZipCodeTw 全二進制零展開引擎效能與資源報告');
+  console.log(' ZipCodeTw 全二進制零展開引擎效能與資源報告');
   console.log('====================================================\n');
 
   console.log('【1. 硬碟資產檔案體積 (Disk Asset Sizes)】');
   if (fs.existsSync(ADDRESS_PREFIXES_PATH)) {
     const binPrefixStat = fs.statSync(ADDRESS_PREFIXES_PATH);
-    console.log(`  - 前綴二進制索引檔 (address_prefixes.bin) : ${formatMB(binPrefixStat.size)} ✨`);
+    console.log(`  - 前綴二進制索引檔 (address_prefixes.bin) : ${formatMB(binPrefixStat.size)}`);
   }
   if (fs.existsSync(ZIPCODE_RULES_PATH)) {
     const binRulesStat = fs.statSync(ZIPCODE_RULES_PATH);
-    console.log(`  - 郵遞區號 二進制規則檔 (zipcode_rules.bin) : ${formatMB(binRulesStat.size)} ✨`);
+    console.log(`  - 郵遞區號 二進制規則檔 (zipcode_rules.bin) : ${formatMB(binRulesStat.size)}`);
   }
   console.log('');
 

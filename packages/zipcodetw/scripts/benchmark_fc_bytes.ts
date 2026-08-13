@@ -206,4 +206,4 @@ const resB = decodeByteCountBlock(block0Byte, testIdx);
 console.log(`\n【4. 輸出解碼比對驗證 (Offset #${testIdx})】`);
 console.log(`  - 方案 A 解碼結果: "${resA}"`);
 console.log(`  - 方案 B 解碼結果: "${resB}"`);
-console.log(`  - 兩者字串一致: ${resA === resB ? '✅ 完全一致' : '❌ 不一致'}`);
+console.log(`  - 兩者字串一致: ${resA === resB ? '完全一致' : '不一致'}`);

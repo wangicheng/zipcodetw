@@ -9,19 +9,19 @@
 
 ---
 
-### 角色導航與文件分流 (Choose Your Role)
+### 角色導航與文件分流
 
 依據 **Diátaxis 檔案體系** 劃分多層級文件：
 
-- **專案審查者 / 評審教授 (Reviewer / Professor)**：
+- **專案審查與評估**：
   - 參閱 [`docs/SHOWCASE.md`](docs/SHOWCASE.md)（**30 秒極速精華摘要**：問題背景、四大資工核心亮點與 -94% 記憶體/-95% 冷啟動量化對比表）。
-- **套件整合開發者 (SDK Integrator)**：
+- **套件整合開發**：
   - 參閱下方 [快速上手](#快速上手) 及完整的 [`docs/api.md`](docs/api.md)（**API 參考手冊**：涵蓋型別定義、方法參數與進階自訂介面）。
-- **核心技術與演算法研習者 (Core Tech Deep-Diver)**：
+- **核心技術與演算法**：
   - 參閱 [`ARCHITECTURE.md`](ARCHITECTURE.md)（**核心系統架構**：二進位 Buffer 佈局、Front Coding 隨機存取、Bitmask 索引與 AST 語法樹）。
   - 參閱 [`RESEARCH_REPORT.md`](RESEARCH_REPORT.md)（**完整學術研究白皮書**：微基準測試、區塊超參數敏感度分析與 Pareto 邊界）。
-- **產品體驗者 (End User)**：
-  - 直接造訪 [線上 Demo 演示頁面 (Live Demo)](https://wangicheng.github.io/zipcodetw/) 進行互動式門牌查詢體驗。
+- **產品體驗與展示**：
+  - 直接造訪 [線上 Demo 展示頁面](https://wangicheng.github.io/zipcodetw/) 進行互動式門牌查詢體驗。
 
 ---
 
@@ -29,7 +29,7 @@
 
 - **極致效能與零冷啟動**：
   - **Block-Based Front Coding**：將全台門牌前綴壓縮至極小二進位檔，具備 $O(1)$ 定點隨機存取能力。
-  - **Zero-Expansion 零展開**：查詢時僅針對 1~3 條候選 ID 進行惰性解碼，V8 Heap 堆記憶體淨增長 **0.00 MB**，冷啟動響應耗時僅 **12 ms (-95%)**。
+  - **零展開檢索**：查詢時僅針對 1~3 條候選 ID 進行惰性解碼，V8 Heap 堆記憶體淨增長 **0.00 MB**，冷啟動響應耗時僅 **12 ms (-95%)**。
 - **全平臺與 100% 離線相容**：
   - 支援 **Browser** (純前端離線查詢，Brotli 傳輸體積僅 791 KB)、**Server** (Node.js/Bun) 與 **Edge** (Cloudflare Workers / AWS Lambda@Edge)。
 - **複雜門牌規則解析**：
@@ -75,7 +75,7 @@ console.log(matches[0].zipcode); // "300096"
 
 ## SDK 整合範例
 
-### 範例：連動下拉選單 (Cascading Select)
+### 範例：連動下拉選單
 
 利用 `getCities()` 與 `getDistricts(city)` 實作縣市/鄉鎮區連動選單與門牌即時查詢：
 
@@ -125,7 +125,7 @@ console.log(matches[0].zipcode); // "300096"
 
 ---
 
-## 專案與文件結構 (Directory Layout)
+## 專案與文件結構
 
 ```
 zipcodetw/
@@ -153,6 +153,6 @@ zipcodetw/
 
 ---
 
-## 授權條款 (License)
+## 授權條款
 
 本專案採用 [MIT License](LICENSE) 授權釋出。

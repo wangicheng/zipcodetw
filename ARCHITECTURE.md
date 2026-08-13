@@ -1,19 +1,19 @@
-# ZipCodeTw 系統架構與設計哲學 (ARCHITECTURE.md)
+# ZipCodeTw 系統架構與設計哲學
 
 本文檔詳細說明 **ZipCodeTw** 台灣 3+3 郵遞區號解析引擎的二進位記憶體佈局、演算邏輯、語法分析器設計與系統效能 Trade-off。
 
 ---
 
-## 1. 架構設計哲學：全二進制零展開 (Dual Binary Zero-Expansion)
+## 1. 架構設計哲學：全二進制零展開
 
 傳統 JavaScript/TypeScript 套件在處理大容量對照表時，習慣將數據存為 JSON 或 JavaScript 物件。在啟動時，V8 引擎必須透過 `JSON.parse()` 將完整資料庫展開為實體物件與 Hash Map 樹狀結構。
 
 對於全台灣 **79,876 筆** 門牌對照資料而言，JSON 展開法會產生逾 44,000 個字串物件與 79,000 個規則物件，導致以下嚴重問題：
 
-1. **冷啟動延遲昂貴**：`JSON.parse()` 與 Hash 樹建置需耗時 > 240 ms，無法滿足 Cloudflare Workers / Serverless 零冷啟動 (Zero-Cold-Start) 需求。
+1. **冷啟動延遲昂貴**：`JSON.parse()` 與 Hash 樹建置需耗時 > 240 ms，無法滿足 Cloudflare Workers / Serverless 零冷啟動需求。
 2. **記憶體與 GC 負擔沉重**：V8 堆記憶體淨增長 35.7 MB，系統進程 RSS 記憶體高達 164.8 MB，且在記憶體受限環境下易引發頻繁的垃圾回收 (GC) 停頓。
 
-ZipCodeTw 採用 **全二進制零展開 (Dual Binary Zero-Expansion)** 設計哲學：將全量門牌與投遞規則於編譯期直接壓裝為兩份自訂二進位資產（`address_prefixes.bin` 與 `zipcode_rules.bin`）。在執行期，檢索引擎**完全不解碼或展開未被查詢到的資料**，直接在原生 `Uint8Array` 記憶體 Buffer 上進行位元運算與指標交集。
+ZipCodeTw 採用 **全二進制零展開** 設計哲學：將全量門牌與投遞規則於編譯期直接壓裝為兩份自訂二進位資產（`address_prefixes.bin` 與 `zipcode_rules.bin`）。在執行期，檢索引擎**完全不解碼或展開未被查詢到的資料**，直接在原生 `Uint8Array` 記憶體 Buffer 上進行位元運算與指標交集。
 
 ---
 
@@ -60,13 +60,13 @@ ZipCodeTw 採用 **全二進制零展開 (Dual Binary Zero-Expansion)** 設計�
 
 ---
 
-## 3. 二進位記憶體佈局 (Binary Assets Memory Layout)
+## 3. 二進位記憶體佈局
 
 ### 3.1 門牌前綴資產 (`address_prefixes.bin`)
 
 全檔體積 1.24 MB，包含全台 44,658 條門牌前綴與預建倒排索引：
 
-#### A. 檔案標頭與定長區塊索引表 (Block Index Table)
+#### A. 檔案標頭與定長區塊索引表
 
 - **Header (16 位元組)**：包含魔術數字、版本號、門牌前綴總數 $N = 44,658$、區塊大小 $K = 64$ 及各區域位元組偏移量。
 - **Block Index Table**：每區塊固定佔用 8 位元組（`relTextOffset: uint32`, `blockLen: uint16`, `reserved: uint16`）。
@@ -75,16 +75,16 @@ ZipCodeTw 採用 **全二進制零展開 (Dual Binary Zero-Expansion)** 設計�
 
 每個 Block 包含 $K = 64$ 條依 Unicode 排序的門牌字串：
 
-- **首條錨點字串 (Anchor String, offsetInBlock = 0)**：儲存 2 位元組 `uint16` 全量 UTF-8 位元組長度 `anchorLen`，後隨原始 UTF-8 位元組串流。
+- **首條錨點字串 (`offsetInBlock = 0`)**：儲存 2 位元組 `uint16` 全量 UTF-8 位元組長度 `anchorLen`，後隨原始 UTF-8 位元組串流。
 - **後續增量字串 (offsetInBlock = 1..63)**：
   - `shared` (`uint8`, 1 byte)：與同區塊前一條字串相同的 UTF-8 位元組長度。
   - `remLen` (`uint8`, 1 byte)：剩餘差異尾綴之 UTF-8 位元組長度。
   - `remStr` (`Uint8Array`, `remLen` bytes): 剩餘差異 UTF-8 位元組串流。
 
-#### C. 二進位倒排索引 (Inverted Index)
+#### C. 二進位倒排索引
 
-- **字元對照表 (Char Map Table)**：包含全台門牌出現過的 1,807 個 Unicode 字元。每項固定 10 位元組（`charCode: uint16`, `postingOffset: uint32`, `postingLen: uint32`），依 `charCode` 排序以支援 $O(\log C)$ 二分搜尋。
-- **倒排清單串流 (Posting Stream)**：連續儲存各字元出現過的門牌前綴 ID 陣列（`Uint16Array` 串流）。
+- **字元對照表**：包含全台門牌出現過的 1,807 個 Unicode 字元。每項固定 10 位元組（`charCode: uint16`, `postingOffset: uint32`, `postingLen: uint32`），依 `charCode` 排序以支援 $O(\log C)$ 二分搜尋。
+- **倒排清單串流**：連續儲存各字元出現過的門牌前綴 ID 陣列（`Uint16Array` 串流）。
 
 ---
 
@@ -92,11 +92,11 @@ ZipCodeTw 採用 **全二進制零展開 (Dual Binary Zero-Expansion)** 設計�
 
 全檔體積 1.33 MB，包含 79,876 筆複雜投遞規則：
 
-#### A. 標頭 (ZPR1 Header, 32 位元組)
+#### A. 標頭 (32 位元組)
 
 包含資產標識符 `ZPR1`、規則總數 (79,876 筆)、Part 1 前綴對照數及 ZipCode/BulkName 字典偏移量。
 
-#### B. 10 位元組定長規則索引表 (Fixed-size Index Table)
+#### B. 10 位元組定長規則索引表
 
 每筆門牌規則固定佔用 10 位元組，允許 $O(1)$ 指標移位讀取：
 
@@ -111,13 +111,13 @@ ZipCodeTw 採用 **全二進制零展開 (Dual Binary Zero-Expansion)** 設計�
 
 以精簡位元遮罩標記門牌條件：
 
-- **標頭位元組 1 (Bitmask Header)**：
+- **標頭位元組 1**：
   - `bit 0`: 是否有單點數值 (`hasValue`)
   - `bit 1`: 是否有範圍最小值 (`hasMin`)
   - `bit 2`: 是否有範圍最大值 (`hasMax`)
   - `bits 3-4`: 單雙號限制 (`parity`: 0=無, 1=單, 2=雙, 3=連)
   - `bits 5-6`: 子號模式 (`subMode`: 0=無, 1=all, 2=sub_all)
-- **標頭位元組 2 (Unit Enum Header)**：
+- **標頭位元組 2**：
   - `bits 0-3`: 門牌單位 Enum (1=號, 2=巷, 3=樓, 4=弄, 5=附號)
   - `bits 4-7`: 結束單位 Enum (如巷至號)
 
@@ -125,7 +125,7 @@ ZipCodeTw 採用 **全二進制零展開 (Dual Binary Zero-Expansion)** 設計�
 
 ## 4. 檢索引擎演算法與時間/空間複雜度
 
-### 4.1 雙指標位元交集與惰性解碼演算法 ($O(N+M)$)
+### 4.1 雙指標位元交集與惰性解碼演算法
 
 當查詢「`臺北市大安區和平東路`」時，檢索引擎執行以下步驟：
 
@@ -142,7 +142,7 @@ ZipCodeTw 採用 **全二進制零展開 (Dual Binary Zero-Expansion)** 設計�
 
 ---
 
-## 5. 門牌條件 AST 語法分析器設計 (Chevrotain Parser)
+## 5. 門牌條件 AST 語法分析器設計
 
 中華郵政官方 DBF 中的門牌條件包含非結構化的中文描述（例如 `"雙全"`, `"單 101號以上"`, `"連 1之23號至 45號附號全"`, `"2樓以上"`）。
 
@@ -156,7 +156,7 @@ ZipCodeTw 在編譯期使用 [Chevrotain](https://github.com/SAP/chevrotain) 構
 
 ## 6. 系統效能與工程 Trade-off
 
-| 評估維度             | 傳統 JSON/JS 物件展開法 | ZipCodeTw 全二進制零展開引擎 | 工程權衡 (Trade-off) 分析              |
+| 評估維度             | 傳統 JSON/JS 物件展開法 | ZipCodeTw 全二進制零展開引擎 | 工程權衡分析                           |
 | :------------------- | :---------------------: | :--------------------------: | :------------------------------------- |
 | **冷啟動時間**       |        246.45 ms        |         **12.11 ms**         | **-95.10%**（極速零冷啟動）            |
 | **V8 Heap 堆記憶體** |        35.74 MB         |         **0.00 MB**          | **-100.00%**（零物件展開）             |

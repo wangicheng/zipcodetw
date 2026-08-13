@@ -1,4 +1,4 @@
-# ZipCodeTw API 參考手冊 (Reference Manual)
+# ZipCodeTw API 參考手冊
 
 本文件提供 `zipcodetw` 套件的完整 API 介面說明、TypeScript 型別定義與自訂擴充指南。
 
@@ -13,9 +13,9 @@
   - [SearchMatch](#searchmatch)
   - [ZipCodeTwOptions](#zipcodetwoptions)
   - [AddressRule](#addressrule)
-- [進階擴充介面 (Extension APIs)](#進階擴充介面-extension-apis)
-  - [AddressNormalizer (正規化器)](#addressnormalizer-正規化器)
-  - [AddressRanker (排序器)](#addressranker-排序器)
+- [進階擴充介面](#進階擴充介面)
+  - [AddressNormalizer 正規化介面](#addressnormalizer-正規化介面)
+  - [AddressRanker 排序介面](#addressranker-排序介面)
 - [例外與錯誤處理](#例外與錯誤處理)
 
 ---
@@ -242,11 +242,11 @@ export interface AddressRule {
 
 ---
 
-## 進階擴充介面 (Extension APIs)
+## 進階擴充介面
 
 `zipcodetw` 允許開發者透過依賴注入 (Dependency Injection) 自訂地址正規化與結果排序邏輯。
 
-### `AddressNormalizer` (正規化器)
+### `AddressNormalizer` 正規化介面
 
 用於在查詢前清理與正規化使用者輸入的文字（例如將全形字轉半形、中文數字轉換為阿拉伯數字）：
 
@@ -274,7 +274,7 @@ export interface AddressNormalizer {
   });
   ```
 
-### `AddressRanker` (排序器)
+### `AddressRanker` 排序介面
 
 當單一地址存在多筆可能匹配項時，用於計算優先順序評分：
 

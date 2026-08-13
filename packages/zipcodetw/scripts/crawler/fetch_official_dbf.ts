@@ -108,7 +108,7 @@ export function findLocalDBF(): string | null {
 
 export async function fetchRemoteDownloadUrls(): Promise<string[]> {
   const officialUrl = 'https://www.post.gov.tw/post/internet/Download/index.jsp?ID=220306';
-  console.log(`📡 正在連線中華郵政開放資料下載頁面: ${officialUrl} ...`);
+  console.log(`[INFO] 正在連線中華郵政開放資料下載頁面: ${officialUrl} ...`);
   try {
     const res = await fetch(officialUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
@@ -118,7 +118,7 @@ export async function fetchRemoteDownloadUrls(): Promise<string[]> {
     const matches = html.match(/https?:\/\/www\.post\.gov\.tw\/post\/download\/Zip33Usetup_[^\s"\'<>]+\.rar/g) || [];
     return Array.from(new Set(matches)).sort();
   } catch (e) {
-    console.warn(`⚠️ 遠端頁面連線失敗: ${e}`);
+    console.warn(`[WARN] 遠端頁面連線失敗: ${e}`);
     return [];
   }
 }
@@ -199,15 +199,15 @@ export async function findFileByExtRecursively(dirPath: string, extLower: string
 }
 
 export async function parseDbfAndCompile(dbfPath: string): Promise<void> {
-  console.log(`📍 使用 DBF 檔案: ${dbfPath}`);
-  console.log(`⚙️ 正在解析 3+3 郵遞區號門牌對照檔...`);
+  console.log(`[INFO] 使用 DBF 檔案: ${dbfPath}`);
+  console.log(`[INFO] 正在解析 3+3 郵遞區號門牌對照檔...`);
 
   const fileBuf = await fs.readFile(dbfPath);
   const reader = new DBFReaderTS();
   await reader.parseHeader(fileBuf);
 
   const records = reader.fetchRecords(fileBuf);
-  console.log(`📊 解析完成！成功讀取 ${records.length.toLocaleString()} 筆有效門牌對照紀錄。`);
+  console.log(`[INFO] 解析完成！成功讀取 ${records.length.toLocaleString()} 筆有效門牌對照紀錄。`);
 
   const rawAddresses: RawAddress[] = records.map((r) => {
     const [roadName, section] = splitRoadAndSection(r.ROAD || '');
@@ -226,7 +226,7 @@ export async function parseDbfAndCompile(dbfPath: string): Promise<void> {
 }
 
 export async function compileBinaryAssets(rawAddresses: RawAddress[]) {
-  console.log('\n🚀 正在自動轉譯並編譯二進制資產...');
+  console.log('\n[INFO] 正在自動轉譯並編譯二進制資產...');
 
   const grouped = new Map<string, RawAddress[]>();
   for (const addr of rawAddresses) {
@@ -254,7 +254,7 @@ export async function compileBinaryAssets(rawAddresses: RawAddress[]) {
   const binPrefixesBuf = buildBinaryPrefixes(part1List);
   const prefixPath = path.resolve(import.meta.dirname, '../../', ADDRESS_PREFIXES_PATH);
   await fs.writeFile(prefixPath, binPrefixesBuf);
-  console.log(`✨ 門牌前綴二進制檔已產生：${prefixPath} (${(binPrefixesBuf.length / 1024).toFixed(2)} KB)`);
+  console.log(`[INFO] 門牌前綴二進制檔已產生：${prefixPath} (${(binPrefixesBuf.length / 1024).toFixed(2)} KB)`);
 
   const addressToIndex = new Map(part1List.map((addr, i) => [addr, i]));
 
@@ -283,7 +283,7 @@ export async function compileBinaryAssets(rawAddresses: RawAddress[]) {
   const binRulesBuf = buildBinaryRules(part2Data);
   const rulesPath = path.resolve(import.meta.dirname, '../../', ZIPCODE_RULES_PATH);
   await fs.writeFile(rulesPath, binRulesBuf);
-  console.log(`✨ 郵遞區號二進制規則檔已產生：${rulesPath} (${(binRulesBuf.length / 1024 / 1024).toFixed(2)} MB)`);
+  console.log(`[INFO] 郵遞區號二進制規則檔已產生：${rulesPath} (${(binRulesBuf.length / 1024 / 1024).toFixed(2)} MB)`);
 }
 
 /**
@@ -292,15 +292,15 @@ export async function compileBinaryAssets(rawAddresses: RawAddress[]) {
  */
 export async function fetchRemoteDataAndBuild(): Promise<void> {
   console.log('============================================================');
-  console.log(' 📮 中華郵政 3+3 郵遞區號官方資料遠端抓取與編譯工具');
+  console.log(' 中華郵政 3+3 郵遞區號官方資料遠端抓取與編譯工具');
   console.log('============================================================');
 
   const urls = await fetchRemoteDownloadUrls();
   if (urls.length === 0) {
-    throw new Error('❌ 無法從中華郵政官網取得遠端下載連結，請確認網路連線或官方頁面架構變更。');
+    throw new Error('[ERROR] 無法從中華郵政官網取得遠端下載連結，請確認網路連線或官方頁面架構變更。');
   }
 
-  console.log(`🔗 找到 ${urls.length} 個官方 RAR 下載連結:`);
+  console.log(`[INFO] 找到 ${urls.length} 個官方 RAR 下載連結:`);
   for (const u of urls) {
     console.log(`  - ${u}`);
   }
@@ -313,12 +313,12 @@ export async function fetchRemoteDataAndBuild(): Promise<void> {
     const url = urls[i];
     const fileName = path.basename(url);
     const dest = path.join(downloadsDir, fileName);
-    console.log(`⬇️ 正在下載 (${i + 1}/${urls.length}): ${fileName} ...`);
+    console.log(`[INFO] 正在下載 (${i + 1}/${urls.length}): ${fileName} ...`);
     await downloadFile(url, dest);
     downloadedFiles.push(dest);
   }
 
-  console.log('📦 所有 RAR 檔案下載完成，正在準備解壓縮...');
+  console.log('[INFO] 所有 RAR 檔案下載完成，正在準備解壓縮...');
   const extractDir = path.join(downloadsDir, 'extracted');
   await fs.mkdir(extractDir, { recursive: true });
 
@@ -329,20 +329,20 @@ export async function fetchRemoteDataAndBuild(): Promise<void> {
       targetPath: extractDir,
     });
     const extractedResult = extractor.extract();
-    console.log(`📂 已完成 RAR 壓縮包解壓，包含 ${[...extractedResult.files].length} 個檔案。`);
+    console.log(`[INFO] 已完成 RAR 壓縮包解壓，包含 ${[...extractedResult.files].length} 個檔案。`);
 
     const exeFile = await findFileByExtRecursively(extractDir, '.exe');
     if (exeFile) {
-      console.log(`📦 檢測到 SFX 自解壓執行檔: ${path.basename(exeFile)}，正在解壓縮內含資料庫...`);
+      console.log(`[INFO] 檢測到 SFX 自解壓執行檔: ${path.basename(exeFile)}，正在解壓縮內含資料庫...`);
       const sfxExtractor = await createExtractorFromFile({
         filepath: exeFile,
         targetPath: extractDir,
       });
       const sfxResult = sfxExtractor.extract();
-      console.log(`📂 SFX 解壓完成，包含 ${[...sfxResult.files].length} 個檔案。`);
+      console.log(`[INFO] SFX 解壓完成，包含 ${[...sfxResult.files].length} 個檔案。`);
     }
   } catch (err) {
-    console.warn('⚠️ node-unrar-js 解壓過程發出警告或訊息:', err);
+    console.warn('[WARN] node-unrar-js 解壓過程發出警告或訊息:', err);
   }
 
   // 尋找解壓目錄下的 rall1.dbf
@@ -350,12 +350,12 @@ export async function fetchRemoteDataAndBuild(): Promise<void> {
 
   if (!dbfPath) {
     throw new Error(
-      `❌ 已下載官方套件 (${downloadedFiles.map((f) => path.basename(f)).join(', ')})，但在解壓目錄 (${extractDir}) 中無法找到 rall1.dbf 檔案。`,
+      `[ERROR] 已下載官方套件 (${downloadedFiles.map((f) => path.basename(f)).join(', ')})，但在解壓目錄 (${extractDir}) 中無法找到 rall1.dbf 檔案。`,
     );
   }
 
   await parseDbfAndCompile(dbfPath);
-  console.log('\n🎉 遠端資料抓取、解析與二進制編譯全部順利完成！');
+  console.log('\n[INFO] 遠端資料抓取、解析與二進制編譯全部順利完成！');
 }
 
 /**
@@ -363,19 +363,19 @@ export async function fetchRemoteDataAndBuild(): Promise<void> {
  */
 export async function buildLocalDbfPipeline(): Promise<void> {
   console.log('============================================================');
-  console.log(' 📮 中華郵政 3+3 郵遞區號本地 DBF 編譯工具');
+  console.log(' 中華郵政 3+3 郵遞區號本地 DBF 編譯工具');
   console.log('============================================================');
 
   const dbfPath = findLocalDBF();
   if (!dbfPath) {
     throw new Error(
-      '❌ 未在預設路徑找到 rall1.dbf 檔案！\n' +
+      '[ERROR] 未在預設路徑找到 rall1.dbf 檔案！\n' +
         '   請將 rall1.dbf 放置於 C:\\Zip33U\\DBF\\rall1.dbf 或 packages/zipcodetw/scripts/crawler/DBF/rall1.dbf。',
     );
   }
 
   await parseDbfAndCompile(dbfPath);
-  console.log('\n🎉 本地 DBF 解析與二進制編譯全部順利完成！');
+  console.log('\n[INFO] 本地 DBF 解析與二進制編譯全部順利完成！');
 }
 
 if (import.meta.main) {
