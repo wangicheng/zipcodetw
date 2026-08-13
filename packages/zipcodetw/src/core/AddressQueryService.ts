@@ -46,7 +46,8 @@ export class AddressQueryService {
       const isDigit = (c: string) => /\d/.test(c);
       const isChiNum = (c: string) => /[一二三四五六七八九十]/.test(c);
 
-      if (!(part2 === '' || (!isDigit(lastChar) && isDigit(nextChar)) || (!isChiNum(lastChar) && isChiNum(nextChar)))) continue;
+      if (!(part2 === '' || (!isDigit(lastChar) && isDigit(nextChar)) || (!isChiNum(lastChar) && isChiNum(nextChar))))
+        continue;
 
       const part1Converted = this.normalizer.convertPart1(part1);
       const part2Converted = this.normalizer.convertPart2(part2);

@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const rawDataPath = path.join(__dirname, '../data/raw_addresses.json');
-const rawAddresses: Array<{ city: string; district: string; road: string; section: string }> = JSON.parse(fs.readFileSync(rawDataPath, 'utf-8'));
+const rawAddresses: Array<{ city: string; district: string; road: string; section: string }> = JSON.parse(
+  fs.readFileSync(rawDataPath, 'utf-8'),
+);
 const part1Set = new Set<string>();
 for (const item of rawAddresses) {
   const sec = item.section && item.section !== '0' ? item.section : '';
@@ -51,8 +53,8 @@ function testBlockSizeRigor(blockSize: number, iterations = 10, queriesPerRun = 
   const totalSize = blockIndexBuf.length + textBuf.length;
   const decoder = new TextDecoder('utf-8');
 
-  const warmUpCount = blockSize > 2048 ? 200 : (blockSize > 512 ? 1000 : 5000);
-  const effectiveQueries = blockSize > 2048 ? 300 : (blockSize > 512 ? 1000 : 5000);
+  const warmUpCount = blockSize > 2048 ? 200 : blockSize > 512 ? 1000 : 5000;
+  const effectiveQueries = blockSize > 2048 ? 300 : blockSize > 512 ? 1000 : 5000;
 
   // 1. V8 JIT 預熱
   for (let q = 0; q < warmUpCount; q++) {
@@ -140,8 +142,9 @@ console.log('【Block Size 超參數敏感度分析 (Hyperparameter Sensitivity 
 const sizes = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, sortedPrefixes.length];
 const results = sizes.map((s) => testBlockSizeRigor(s, 10));
 
-
-console.log('| 區塊大小 ($K$) | 區塊總數 | 文字流體積 | 區塊索引表體積 | 前綴資產總體積 | 單次解碼延遲 ($\\mu \\pm \\sigma \\ \\mu\\text{s}$) | 說明 |');
+console.log(
+  '| 區塊大小 ($K$) | 區塊總數 | 文字流體積 | 區塊索引表體積 | 前綴資產總體積 | 單次解碼延遲 ($\\mu \\pm \\sigma \\ \\mu\\text{s}$) | 說明 |',
+);
 console.log('| :---: | :---: | :---: | :---: | :---: | :---: | :--- |');
 for (const r of results) {
   let note = '';
@@ -152,6 +155,7 @@ for (const r of results) {
   else if (r.blockSize === 2048) note = '大型區塊';
   else if (r.blockSize === sortedPrefixes.length) note = '極限：單一大區塊 (Single Block)';
 
-  console.log(`| **${r.blockSize}** | ${r.blockCount} | ${r.textKB} KB | ${r.indexKB} KB | **${r.totalKB} KB** | **${r.meanUs} \\pm ${r.stdDevUs} \\ \\mu\\text{s}** | ${note} |`);
+  console.log(
+    `| **${r.blockSize}** | ${r.blockCount} | ${r.textKB} KB | ${r.indexKB} KB | **${r.totalKB} KB** | **${r.meanUs} \\pm ${r.stdDevUs} \\ \\mu\\text{s}** | ${note} |`,
+  );
 }
-

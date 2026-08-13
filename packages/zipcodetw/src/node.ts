@@ -1,10 +1,15 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+
 import { ADDRESS_PREFIXES_PATH, ZIPCODE_RULES_PATH } from './core/constants.ts';
 import { ZipCodeTw, type ZipCodeTwOptions } from './ZipCodeTw.ts';
 
 async function loadBufferFile(filePath: string): Promise<Uint8Array> {
-  const candidates = [filePath, path.resolve(import.meta.dirname, '../', filePath), path.resolve(import.meta.dirname, '../data', path.basename(filePath))];
+  const candidates = [
+    filePath,
+    path.resolve(import.meta.dirname, '../', filePath),
+    path.resolve(import.meta.dirname, '../data', path.basename(filePath)),
+  ];
 
   for (const candidate of candidates) {
     try {

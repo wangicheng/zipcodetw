@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
+
+import { buildBinaryPrefixes, buildBinaryRules } from '../scripts/utils/binaryEncoders';
 import { AddressQueryService } from '../src/core/AddressQueryService';
 import { BinaryPrefixSearchEngine } from '../src/core/BinaryPrefixSearchEngine';
 import { BinaryRuleStore } from '../src/core/BinaryRuleStore';
-import { buildBinaryPrefixes, buildBinaryRules } from '../scripts/utils/binaryEncoders';
 import type { Part2Entry } from '../src/core/types';
 
 describe('AddressQueryService Unit Tests', () => {

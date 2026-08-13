@@ -47,10 +47,7 @@ static async create(
   ```typescript
   import { ZipCodeTw } from 'zipcodetw';
 
-  const zipCodeTw = await ZipCodeTw.create(
-    '/assets/address_prefixes.bin',
-    '/assets/zipcode_rules.bin'
-  );
+  const zipCodeTw = await ZipCodeTw.create('/assets/address_prefixes.bin', '/assets/zipcode_rules.bin');
   ```
 
 #### `ZipCodeTw.fromBinary(binaryPrefixes, binaryRules, options?)`
@@ -138,10 +135,10 @@ public search(address: string, threshold?: number): SearchMatch[]
   ```typescript
   const matches = zipCodeTw.search('台北市大安區和平東路三段1號');
   if (matches.length > 0) {
-    console.log(matches[0].zipcode);  // "106008" (6 碼)
+    console.log(matches[0].zipcode); // "106008" (6 碼)
     console.log(matches[0].zipcode3); // "106" (3 碼)
-    console.log(matches[0].part1);    // "臺北市大安區和平東路"
-    console.log(matches[0].part2);    // "三段1號"
+    console.log(matches[0].part1); // "臺北市大安區和平東路"
+    console.log(matches[0].part2); // "三段1號"
   }
   ```
 
@@ -161,8 +158,8 @@ import { createZipCodeTw } from 'zipcodetw/node';
 async function createZipCodeTw(
   prefixesPath?: string,
   rulesPath?: string,
-  options?: ZipCodeTwOptions
-): Promise<ZipCodeTw>
+  options?: ZipCodeTwOptions,
+): Promise<ZipCodeTw>;
 ```
 
 - **參數**：
@@ -273,7 +270,7 @@ export interface AddressNormalizer {
   }
 
   const zipCodeTw = await ZipCodeTw.create(url1, url2, {
-    normalizer: new CustomNormalizer()
+    normalizer: new CustomNormalizer(),
   });
   ```
 

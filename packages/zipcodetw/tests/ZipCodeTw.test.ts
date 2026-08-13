@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test';
+
 import { createZipCodeTw } from '../src/node.ts';
 
 test('ZipCodeTw High-Level Interface', async () => {

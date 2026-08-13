@@ -5,7 +5,9 @@ const BLOCK_SIZE = 64;
 
 // 讀取真實門牌前綴資料
 const rawDataPath = path.join(__dirname, '../data/raw_addresses.json');
-const rawAddresses: Array<{ city: string; district: string; road: string; section: string }> = JSON.parse(fs.readFileSync(rawDataPath, 'utf-8'));
+const rawAddresses: Array<{ city: string; district: string; road: string; section: string }> = JSON.parse(
+  fs.readFileSync(rawDataPath, 'utf-8'),
+);
 const part1Set = new Set<string>();
 for (const item of rawAddresses) {
   const sec = item.section && item.section !== '0' ? item.section : '';
@@ -143,7 +145,7 @@ function decodeByteCountBlock(buf: Buffer, targetOffset: number): string {
   for (let i = 1; i <= targetOffset; i++) {
     const sharedBytes = buf[cursor++];
     const remLen = buf[cursor++];
-    
+
     // 將 remLen 位元組複製到 currentBytes 偏移 sharedBytes 處
     currentBytes.set(buf.subarray(cursor, cursor + remLen), sharedBytes);
     currentLen = sharedBytes + remLen;
@@ -186,8 +188,12 @@ for (let i = 0; i < numQueries; i++) {
 const endB = performance.now();
 const memAfterB = process.memoryUsage().heapUsed;
 
-console.log(`  - 方案 A (Char Count + JS String): ${(endA - startA).toFixed(2)} ms (單次 ${((endA - startA) / numQueries * 1000).toFixed(2)} ns)`);
-console.log(`  - 方案 B (Byte Count + Pure Uint8Array Delay Decode): ${(endB - startB).toFixed(2)} ms (單次 ${((endB - startB) / numQueries * 1000).toFixed(2)} ns)`);
+console.log(
+  `  - 方案 A (Char Count + JS String): ${(endA - startA).toFixed(2)} ms (單次 ${(((endA - startA) / numQueries) * 1000).toFixed(2)} ns)`,
+);
+console.log(
+  `  - 方案 B (Byte Count + Pure Uint8Array Delay Decode): ${(endB - startB).toFixed(2)} ms (單次 ${(((endB - startB) / numQueries) * 1000).toFixed(2)} ns)`,
+);
 
 console.log(`\n【3. 記憶體開銷 (Heap Used Delta)】`);
 console.log(`  - 方案 A Heap Delta: ${((memAfterA - memBeforeA) / 1024).toFixed(2)} KB`);

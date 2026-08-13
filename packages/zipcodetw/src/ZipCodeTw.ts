@@ -76,7 +76,11 @@ export class ZipCodeTw {
    * @param binaryRules ArrayBuffer or Uint8Array of zipcode_rules.bin
    * @param options Optional custom normalizer or ranker
    */
-  public static fromBinary(binaryPrefixes: ArrayBuffer | Uint8Array, binaryRules: ArrayBuffer | Uint8Array, options?: ZipCodeTwOptions): ZipCodeTw {
+  public static fromBinary(
+    binaryPrefixes: ArrayBuffer | Uint8Array,
+    binaryRules: ArrayBuffer | Uint8Array,
+    options?: ZipCodeTwOptions,
+  ): ZipCodeTw {
     const engine = new BinaryPrefixSearchEngine(binaryPrefixes);
     const service = new AddressQueryService(engine, binaryRules, options?.normalizer, options?.ranker);
     return new ZipCodeTw(service);

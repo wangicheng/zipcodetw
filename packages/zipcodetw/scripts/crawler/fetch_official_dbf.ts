@@ -1,11 +1,13 @@
-import fs from 'node:fs/promises';
 import existsSync from 'node:fs';
-import path from 'node:path';
+import fs from 'node:fs/promises';
 import https from 'node:https';
+import path from 'node:path';
+
 import { createExtractorFromFile } from 'node-unrar-js';
-import { buildBinaryPrefixes, buildBinaryRules } from '../utils/binaryEncoders.ts';
-import type { AddressRule, Part2Entry, RawAddress } from '../../src/core/types.ts';
+
 import { ADDRESS_PREFIXES_PATH, ZIPCODE_RULES_PATH } from '../../src/core/constants.ts';
+import type { AddressRule, Part2Entry, RawAddress } from '../../src/core/types.ts';
+import { buildBinaryPrefixes, buildBinaryRules } from '../utils/binaryEncoders.ts';
 import { parseAddress } from '../utils/parseRule.ts';
 
 export interface DBFField {
@@ -151,7 +153,7 @@ export function downloadFile(url: string, destPath: string): Promise<void> {
         fileStream.on('finish', () => {
           fileStream.close(() => resolve());
         });
-      }
+      },
     );
 
     req.on('error', (err) => {
@@ -348,7 +350,7 @@ export async function fetchRemoteDataAndBuild(): Promise<void> {
 
   if (!dbfPath) {
     throw new Error(
-      `❌ 已下載官方套件 (${downloadedFiles.map((f) => path.basename(f)).join(', ')})，但在解壓目錄 (${extractDir}) 中無法找到 rall1.dbf 檔案。`
+      `❌ 已下載官方套件 (${downloadedFiles.map((f) => path.basename(f)).join(', ')})，但在解壓目錄 (${extractDir}) 中無法找到 rall1.dbf 檔案。`,
     );
   }
 
@@ -368,7 +370,7 @@ export async function buildLocalDbfPipeline(): Promise<void> {
   if (!dbfPath) {
     throw new Error(
       '❌ 未在預設路徑找到 rall1.dbf 檔案！\n' +
-        '   請將 rall1.dbf 放置於 C:\\Zip33U\\DBF\\rall1.dbf 或 packages/zipcodetw/scripts/crawler/DBF/rall1.dbf。'
+        '   請將 rall1.dbf 放置於 C:\\Zip33U\\DBF\\rall1.dbf 或 packages/zipcodetw/scripts/crawler/DBF/rall1.dbf。',
     );
   }
 

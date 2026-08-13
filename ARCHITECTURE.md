@@ -9,6 +9,7 @@
 傳統 JavaScript/TypeScript 套件在處理大容量對照表時，習慣將數據存為 JSON 或 JavaScript 物件。在啟動時，V8 引擎必須透過 `JSON.parse()` 將完整資料庫展開為實體物件與 Hash Map 樹狀結構。
 
 對於全台灣 **79,876 筆** 門牌對照資料而言，JSON 展開法會產生逾 44,000 個字串物件與 79,000 個規則物件，導致以下嚴重問題：
+
 1. **冷啟動延遲昂貴**：`JSON.parse()` 與 Hash 樹建置需耗時 > 240 ms，無法滿足 Cloudflare Workers / Serverless 零冷啟動 (Zero-Cold-Start) 需求。
 2. **記憶體與 GC 負擔沉重**：V8 堆記憶體淨增長 35.7 MB，系統進程 RSS 記憶體高達 164.8 MB，且在記憶體受限環境下易引發頻繁的垃圾回收 (GC) 停頓。
 
@@ -66,11 +67,14 @@ ZipCodeTw 採用 **全二進制零展開 (Dual Binary Zero-Expansion)** 設計�
 全檔體積 1.24 MB，包含全台 44,658 條門牌前綴與預建倒排索引：
 
 #### A. 檔案標頭與定長區塊索引表 (Block Index Table)
+
 - **Header (16 位元組)**：包含魔術數字、版本號、門牌前綴總數 $N = 44,658$、區塊大小 $K = 64$ 及各區域位元組偏移量。
 - **Block Index Table**：每區塊固定佔用 8 位元組（`relTextOffset: uint32`, `blockLen: uint16`, `reserved: uint16`）。
 
 #### B. Block-Based Front Coding 字串串流
+
 每個 Block 包含 $K = 64$ 條依 Unicode 排序的門牌字串：
+
 - **首條錨點字串 (Anchor String, offsetInBlock = 0)**：儲存 2 位元組 `uint16` 全量 UTF-8 位元組長度 `anchorLen`，後隨原始 UTF-8 位元組串流。
 - **後續增量字串 (offsetInBlock = 1..63)**：
   - `shared` (`uint8`, 1 byte)：與同區塊前一條字串相同的 UTF-8 位元組長度。
@@ -78,6 +82,7 @@ ZipCodeTw 採用 **全二進制零展開 (Dual Binary Zero-Expansion)** 設計�
   - `remStr` (`Uint8Array`, `remLen` bytes): 剩餘差異 UTF-8 位元組串流。
 
 #### C. 二進位倒排索引 (Inverted Index)
+
 - **字元對照表 (Char Map Table)**：包含全台門牌出現過的 1,807 個 Unicode 字元。每項固定 10 位元組（`charCode: uint16`, `postingOffset: uint32`, `postingLen: uint32`），依 `charCode` 排序以支援 $O(\log C)$ 二分搜尋。
 - **倒排清單串流 (Posting Stream)**：連續儲存各字元出現過的門牌前綴 ID 陣列（`Uint16Array` 串流）。
 
@@ -88,10 +93,13 @@ ZipCodeTw 採用 **全二進制零展開 (Dual Binary Zero-Expansion)** 設計�
 全檔體積 1.33 MB，包含 79,876 筆複雜投遞規則：
 
 #### A. 標頭 (ZPR1 Header, 32 位元組)
+
 包含資產標識符 `ZPR1`、規則總數 (79,876 筆)、Part 1 前綴對照數及 ZipCode/BulkName 字典偏移量。
 
 #### B. 10 位元組定長規則索引表 (Fixed-size Index Table)
+
 每筆門牌規則固定佔用 10 位元組，允許 $O(1)$ 指標移位讀取：
+
 ```
 ┌─────────────────┬─────────────────┬─────────────────┬─────────────────┐
 │ part1Index (u16)│  zipcodeId (u16)│ bulkNameId (u16)│ruleStreamOffset │
@@ -100,7 +108,9 @@ ZipCodeTw 採用 **全二進制零展開 (Dual Binary Zero-Expansion)** 設計�
 ```
 
 #### C. Bitmask 控制標頭與規則串流
+
 以精簡位元遮罩標記門牌條件：
+
 - **標頭位元組 1 (Bitmask Header)**：
   - `bit 0`: 是否有單點數值 (`hasValue`)
   - `bit 1`: 是否有範圍最小值 (`hasMin`)
@@ -137,6 +147,7 @@ ZipCodeTw 採用 **全二進制零展開 (Dual Binary Zero-Expansion)** 設計�
 中華郵政官方 DBF 中的門牌條件包含非結構化的中文描述（例如 `"雙全"`, `"單 101號以上"`, `"連 1之23號至 45號附號全"`, `"2樓以上"`）。
 
 ZipCodeTw 在編譯期使用 [Chevrotain](https://github.com/SAP/chevrotain) 構建了完整的語法分析器 ([packages/zipcodetw/src/scripts/utils/addressRuleParser.ts](packages/zipcodetw/src/scripts/utils/addressRuleParser.ts))：
+
 - **Lexer Tokenizer**：定義門牌數值、單位 (巷/弄/號/樓)、連接詞 (至/含/以上/以下) 與單雙號 token。
 - **Parser BNF Grammar**：將複雜條件解析為 AST 結構樹。
 - **Bitmask Encoder**：將 AST 壓縮並寫入 `zipcode_rules.bin` 的定長與變長位元組串流中。
@@ -145,12 +156,12 @@ ZipCodeTw 在編譯期使用 [Chevrotain](https://github.com/SAP/chevrotain) 構
 
 ## 6. 系統效能與工程 Trade-off
 
-| 評估維度 | 傳統 JSON/JS 物件展開法 | ZipCodeTw 全二進制零展開引擎 | 工程權衡 (Trade-off) 分析 |
-| :--- | :---: | :---: | :--- |
-| **冷啟動時間** | 246.45 ms | **12.11 ms** | **-95.10%**（極速零冷啟動） |
-| **V8 Heap 堆記憶體** | 35.74 MB | **0.00 MB** | **-100.00%**（零物件展開） |
-| **系統進程 RSS** | 164.86 MB | **< 9.27 MB** | **-94.38%**（適合 Edge 與微型容器） |
-| **熱查詢單次延遲** | **0.0666 ms** (66.6 µs) | **0.0717 ms** (71.7 µs) | +5.09 µs（動態位元運算產生的微幅代價） |
+| 評估維度             | 傳統 JSON/JS 物件展開法 | ZipCodeTw 全二進制零展開引擎 | 工程權衡 (Trade-off) 分析              |
+| :------------------- | :---------------------: | :--------------------------: | :------------------------------------- |
+| **冷啟動時間**       |        246.45 ms        |         **12.11 ms**         | **-95.10%**（極速零冷啟動）            |
+| **V8 Heap 堆記憶體** |        35.74 MB         |         **0.00 MB**          | **-100.00%**（零物件展開）             |
+| **系統進程 RSS**     |        164.86 MB        |        **< 9.27 MB**         | **-94.38%**（適合 Edge 與微型容器）    |
+| **熱查詢單次延遲**   | **0.0666 ms** (66.6 µs) |   **0.0717 ms** (71.7 µs)    | +5.09 µs（動態位元運算產生的微幅代價） |
 
 **工程決策**：ZipCodeTw 選擇以極微幅的 **5.09 微秒 (+7.6%)** CPU 計算時間（遠低於人類感知極限 1 毫秒），換取了 **-95% 的冷啟動縮減** 與 **-94% 的記憶體佔用降低**，完美適應 Serverless / Cloudflare Workers 與瀏覽器前端等資源敏感型環境。
 

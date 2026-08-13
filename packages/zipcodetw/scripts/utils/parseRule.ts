@@ -1,4 +1,5 @@
 import { CstParser, createToken, Lexer } from 'chevrotain';
+
 import type { AddressRule } from '../../src/core/types.ts';
 
 // ==========================================
@@ -41,7 +42,20 @@ const Modifier = createToken({ name: 'Modifier', pattern: /單|雙|連/ });
 const Integer = createToken({ name: 'Integer', pattern: /[0-9]+/ });
 const WhiteSpace = createToken({ name: 'WhiteSpace', pattern: /\s+/, group: Lexer.SKIPPED });
 
-const allTokens = [WhiteSpace, KwSubMore, KwSubAll, KwSubUnit, KwBasement, KwAll, KwBound, To, Sub, Unit, Modifier, Integer];
+const allTokens = [
+  WhiteSpace,
+  KwSubMore,
+  KwSubAll,
+  KwSubUnit,
+  KwBasement,
+  KwAll,
+  KwBound,
+  To,
+  Sub,
+  Unit,
+  Modifier,
+  Integer,
+];
 
 const AddressLexer = new Lexer(allTokens);
 

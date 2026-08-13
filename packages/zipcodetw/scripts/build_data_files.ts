@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { buildLocalDbfPipeline, compileBinaryAssets, fetchRemoteDataAndBuild } from './crawler/fetch_official_dbf.ts';
+
 import type { RawAddress } from '../src/core/types.ts';
+import { buildLocalDbfPipeline, compileBinaryAssets, fetchRemoteDataAndBuild } from './crawler/fetch_official_dbf.ts';
 
 async function main() {
   const customJsonArgIdx = process.argv.indexOf('--json');

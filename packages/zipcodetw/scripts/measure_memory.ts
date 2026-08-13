@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+
 import { ADDRESS_PREFIXES_PATH, ZIPCODE_RULES_PATH } from '../src/core/constants.ts';
 import { createZipCodeTw } from '../src/node.ts';
 

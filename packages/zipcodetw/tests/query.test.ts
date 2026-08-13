@@ -1,5 +1,6 @@
 import { test } from 'bun:test';
 import assert from 'node:assert';
+
 import { createZipCodeTw } from '../src/node.ts';
 
 test('ZipCodeTw Integration Test', async () => {

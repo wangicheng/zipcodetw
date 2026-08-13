@@ -2,14 +2,19 @@
   "name": "zipcodetw",
   "version": "1.0.0",
   "description": "現代化、高效能的台灣 3+3 郵遞區號查詢與解析引擎",
-  "license": "MIT",
   "keywords": [
-    "zipcode",
-    "taiwan",
     "address",
-    "front-coding",
+    "ast",
     "chevrotain",
-    "ast"
+    "front-coding",
+    "taiwan",
+    "zipcode"
+  ],
+  "license": "MIT",
+  "files": [
+    "src",
+    "data/address_prefixes.bin",
+    "data/zipcode_rules.bin"
   ],
   "type": "module",
   "main": "src/index.ts",
@@ -17,17 +22,12 @@
     ".": "./src/index.ts",
     "./node": "./src/node.ts"
   },
-  "files": [
-    "src",
-    "data/address_prefixes.bin",
-    "data/zipcode_rules.bin"
-  ],
   "scripts": {
     "build:data": "bun scripts/build_data_files.ts",
     "test": "bun test"
   },
   "devDependencies": {
-    "chevrotain": "^11.1.0",
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "chevrotain": "^11.1.0"
   }
 }

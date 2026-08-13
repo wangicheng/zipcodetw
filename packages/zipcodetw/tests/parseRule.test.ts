@@ -1,7 +1,8 @@
 import { describe, test } from 'bun:test';
 import assert from 'node:assert';
-import type { AddressRule } from '../src/core/types.ts';
+
 import { parseAddress } from '../scripts/utils/parseRule.ts';
+import type { AddressRule } from '../src/core/types.ts';
 
 const testCases: { input: string; expected: AddressRule[] }[] = [
   { input: '全', expected: [] },
@@ -48,7 +49,10 @@ const testCases: { input: string; expected: AddressRule[] }[] = [
       { max: [11], parity: 'odd', unit: '號' },
     ],
   },
-  { input: '連151號至151之3號3樓以上', expected: [{ value: [151] }, { min: [0], max: [3], parity: '連', unit: '號' }, { min: [3], unit: '樓' }] },
+  {
+    input: '連151號至151之3號3樓以上',
+    expected: [{ value: [151] }, { min: [0], max: [3], parity: '連', unit: '號' }, { min: [3], unit: '樓' }],
+  },
   {
     input: '單25號至41號2樓至12樓',
     expected: [
@@ -56,10 +60,16 @@ const testCases: { input: string; expected: AddressRule[] }[] = [
       { min: [2], max: [12], unit: '樓' },
     ],
   },
-  { input: '283巷連1之1號至之2號', expected: [{ value: [283], unit: '巷' }, { value: [1] }, { min: [1], max: [2], parity: '連', unit: '號' }] },
+  {
+    input: '283巷連1之1號至之2號',
+    expected: [{ value: [283], unit: '巷' }, { value: [1] }, { min: [1], max: [2], parity: '連', unit: '號' }],
+  },
   { input: '雙720號至1092巷', expected: [{ min: [720], max: [1092], parity: 'even', unit: '號', endUnit: '巷' }] },
   { input: '2號含附號', expected: [{ value: [2], unit: '號', subMode: 'sub_all' }] },
-  { input: '雙98號至102號含附號', expected: [{ min: [98], max: [102], parity: 'even', unit: '號', subMode: 'sub_all' }] },
+  {
+    input: '雙98號至102號含附號',
+    expected: [{ min: [98], max: [102], parity: 'even', unit: '號', subMode: 'sub_all' }],
+  },
   {
     input: '118巷單7號含附號以下',
     expected: [

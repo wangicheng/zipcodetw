@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+
 import { ZipCodeTw, normalizeCityName, parseCityDistrict } from '../src/index.ts';
 import { createZipCodeTw } from '../src/node.ts';
 

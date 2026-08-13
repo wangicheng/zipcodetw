@@ -57,16 +57,16 @@ export class BinaryPrefixSearchEngine {
     }
 
     lists.sort((a, b) => a.length - b.length);
-    let candidateIds = lists[0];
+    let candidateIds = lists[0]!;
 
     for (let i = 1; i < lists.length; i++) {
-      candidateIds = this.intersectSortedUint16(candidateIds, lists[i]);
+      candidateIds = this.intersectSortedUint16(candidateIds, lists[i]!);
       if (candidateIds.length === 0) return [];
     }
 
     const results: Array<{ text: string; index: number }> = [];
     for (let i = 0; i < candidateIds.length; i++) {
-      const id = candidateIds[i];
+      const id = candidateIds[i]!;
       const addr = this.decodeStringById(id);
       if (this.isSubsequence(addr, query)) {
         results.push({ text: addr, index: id });
@@ -137,8 +137,8 @@ export class BinaryPrefixSearchEngine {
 
     // Decode Front Coded byte streams in block up to offsetInBlock
     for (let i = 1; i <= offsetInBlock; i++) {
-      const sharedBytes = this.buffer[cursor++];
-      const remLen = this.buffer[cursor++];
+      const sharedBytes = this.buffer[cursor++]!;
+      const remLen = this.buffer[cursor++]!;
 
       currentBytes.set(this.buffer.subarray(cursor, cursor + remLen), sharedBytes);
       currentLen = sharedBytes + remLen;
@@ -160,8 +160,8 @@ export class BinaryPrefixSearchEngine {
       len2 = arr2.length;
 
     while (i < len1 && j < len2) {
-      const val1 = arr1[i],
-        val2 = arr2[j];
+      const val1 = arr1[i]!,
+        val2 = arr2[j]!;
       if (val1 < val2) i++;
       else if (val1 > val2) j++;
       else {
@@ -178,7 +178,7 @@ export class BinaryPrefixSearchEngine {
       queryIdx = 0;
     const queryLen = query.length;
     while (queryIdx < queryLen) {
-      const foundIdx = text.indexOf(query[queryIdx], textIdx);
+      const foundIdx = text.indexOf(query[queryIdx]!, textIdx);
       if (foundIdx === -1) return false;
       textIdx = foundIdx + 1;
       queryIdx++;

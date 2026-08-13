@@ -53,13 +53,10 @@ npm install zipcodetw
 import { ZipCodeTw } from 'zipcodetw';
 
 // 載入二進位資產檔 (極小 791 KB Brotli 傳輸)
-const zipCodeTw = await ZipCodeTw.create(
-  '/data/address_prefixes.bin',
-  '/data/zipcode_rules.bin'
-);
+const zipCodeTw = await ZipCodeTw.create('/data/address_prefixes.bin', '/data/zipcode_rules.bin');
 
 const matches = zipCodeTw.search('台北市大安區和平東路三段1號');
-console.log(matches[0].zipcode);  // "106008" (6 碼郵遞區號)
+console.log(matches[0].zipcode); // "106008" (6 碼郵遞區號)
 console.log(matches[0].zipcode3); // "106"    (3 碼郵遞區號)
 ```
 
@@ -92,19 +89,22 @@ console.log(matches[0].zipcode); // "300096"
   import { ZipCodeTw } from 'zipcodetw';
 
   const zipCodeTw = await ZipCodeTw.create('/data/address_prefixes.bin', '/data/zipcode_rules.bin');
-  
+
   const citySelect = document.getElementById('city-select');
   const districtSelect = document.getElementById('district-select');
   const detailInput = document.getElementById('detail-input');
   const zipcodeBadge = document.getElementById('zipcode-badge');
 
   // 1. 初始化縣市選項
-  citySelect.innerHTML = zipCodeTw.getCities().map(c => `<option value="${c}">${c}</option>`).join('');
+  citySelect.innerHTML = zipCodeTw
+    .getCities()
+    .map((c) => `<option value="${c}">${c}</option>`)
+    .join('');
 
   // 2. 當縣市改變時更新鄉鎮區選單
   const updateDistricts = () => {
     const districts = zipCodeTw.getDistricts(citySelect.value);
-    districtSelect.innerHTML = districts.map(d => `<option value="${d}">${d}</option>`).join('');
+    districtSelect.innerHTML = districts.map((d) => `<option value="${d}">${d}</option>`).join('');
     updateZipcode();
   };
 
@@ -144,12 +144,12 @@ zipcodetw/
 
 ## 開發與建置指令
 
-| 指令 | 說明 |
-|------|------|
+| 指令                 | 說明                                                           |
+| -------------------- | -------------------------------------------------------------- |
 | `bun run build:data` | 建置核心資料：自動下載中華郵政最新官方開放資料並編譯為二進制檔 |
-| `bun test` | 執行核心單元測試 (包含 Parser、搜尋邏輯與解碼驗證) |
-| `bun run dev` | 在 `packages/demo` 啟動靜態展示網頁開發伺服器 |
-| `bun run build` | 完整建置核心資料資產與 Demo 靜態網站 |
+| `bun test`           | 執行核心單元測試 (包含 Parser、搜尋邏輯與解碼驗證)             |
+| `bun run dev`        | 在 `packages/demo` 啟動靜態展示網頁開發伺服器                  |
+| `bun run build`      | 完整建置核心資料資產與 Demo 靜態網站                           |
 
 ---
 

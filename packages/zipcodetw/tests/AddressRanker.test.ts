@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+
 import { PostalDeliveryRanker } from '../src/core/ranker/AddressRanker.ts';
 import type { SearchMatch } from '../src/core/types.ts';
 

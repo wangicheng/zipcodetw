@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+
 import { DefaultAddressNormalizer } from '../src/core/normalizer/AddressNormalizer.ts';
 
 describe('DefaultAddressNormalizer Unit Tests', () => {

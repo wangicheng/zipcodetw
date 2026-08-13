@@ -216,7 +216,12 @@ export class BinaryRuleStore {
         addrIdx += valLen;
 
         // Main house number rule without sub_all constraint does NOT cover extra sub-numbers
-        if (unit === 1 /* 號 */ && subMode !== 2 /* sub_all */ && addrIdx < addressNumbers.length && r === rulesCount - 1) {
+        if (
+          unit === 1 /* 號 */ &&
+          subMode !== 2 /* sub_all */ &&
+          addrIdx < addressNumbers.length &&
+          r === rulesCount - 1
+        ) {
           return false;
         }
 
@@ -263,7 +268,13 @@ export class BinaryRuleStore {
     return 1 - minLen;
   }
 
-  private compareArrayWithInt16Payload(arr: number[], arrStart: number, availableLen: number, bufOffset: number, payloadLen: number): number {
+  private compareArrayWithInt16Payload(
+    arr: number[],
+    arrStart: number,
+    availableLen: number,
+    bufOffset: number,
+    payloadLen: number,
+  ): number {
     const len = Math.min(availableLen, payloadLen);
     for (let i = 0; i < len; i++) {
       const bVal = this.view.getInt16(bufOffset + i * 2, true);

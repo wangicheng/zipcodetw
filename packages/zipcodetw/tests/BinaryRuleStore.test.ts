@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import fs from 'node:fs';
 import path from 'node:path';
+
 import { BinaryRuleStore } from '../src/core/BinaryRuleStore.ts';
 import { ZIPCODE_RULES_PATH } from '../src/core/constants.ts';
 import { createZipCodeTw } from '../src/node.ts';
