@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { compileBinaryAssets, main as runDbfPipeline } from '../../../tools/data-crawler/fetch_official_dbf.ts';
+import { buildLocalDbfPipeline, compileBinaryAssets, fetchRemoteDataAndBuild } from './crawler/fetch_official_dbf.ts';
 import type { RawAddress } from '../src/core/types.ts';
 
 async function main() {
@@ -14,8 +14,14 @@ async function main() {
     return;
   }
 
-  // Default: Direct end-to-end memory pipeline from DBF to binary assets
-  await runDbfPipeline();
+  // 套件建置時連線抓取最新官方郵遞區號資料並編譯二進制檔
+  try {
+    console.log('📡 正在於建置階段自動抓取最新的中華郵政 3+3 郵遞區號資料...');
+    await fetchRemoteDataAndBuild();
+  } catch (err) {
+    console.warn('⚠️ 遠端抓取最新資料失敗，嘗試使用本地 DBF 檔案備援:', err);
+    await buildLocalDbfPipeline();
+  }
 }
 
 main().catch((err) => {

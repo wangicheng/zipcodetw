@@ -20,7 +20,7 @@ export class BinaryPrefixSearchEngine {
     }
     this.view = new DataView(this.buffer.buffer, this.buffer.byteOffset, this.buffer.byteLength);
 
-    const magic = String.fromCharCode(this.buffer[0], this.buffer[1], this.buffer[2], this.buffer[3]);
+    const magic = String.fromCharCode(this.buffer[0]!, this.buffer[1]!, this.buffer[2]!, this.buffer[3]!);
     if (magic !== 'ZPF1') {
       throw new Error(`Invalid binary prefixes magic header: ${magic}`);
     }
@@ -110,36 +110,38 @@ export class BinaryPrefixSearchEngine {
 
     const blockPos = this.blockIndexOffset + blockIdx * 8;
     const relTextOffset = this.view.getUint32(blockPos, true);
-    const blockLen = this.view.getUint16(blockPos + 4, true);
 
     let cursor = this.textStreamOffset + relTextOffset;
-    const endCursor = cursor + blockLen;
-
     const decoder = new TextDecoder('utf-8');
 
     // Decode Anchor String (String 0 in block)
     const anchorLen = this.view.getUint16(cursor, true);
     cursor += 2;
-    let currentStr = decoder.decode(this.buffer.subarray(cursor, cursor + anchorLen));
-    cursor += anchorLen;
 
     if (offsetInBlock === 0) {
-      if (this.stringCache.size < 5000) this.stringCache.set(targetId, currentStr);
-      return currentStr;
+      const anchorStr = decoder.decode(this.buffer.subarray(cursor, cursor + anchorLen));
+      if (this.stringCache.size < 5000) this.stringCache.set(targetId, anchorStr);
+      return anchorStr;
     }
 
-    // Decode Front Coded strings in block up to offsetInBlock
-    for (let i = 1; i <= offsetInBlock && cursor < endCursor; i++) {
-      const shared = this.buffer[cursor++];
+    const currentBytes = new Uint8Array(128);
+    currentBytes.set(this.buffer.subarray(cursor, cursor + anchorLen), 0);
+    let currentLen = anchorLen;
+    cursor += anchorLen;
+
+    // Decode Front Coded byte streams in block up to offsetInBlock
+    for (let i = 1; i <= offsetInBlock; i++) {
+      const sharedBytes = this.buffer[cursor++];
       const remLen = this.buffer[cursor++];
-      const remStr = decoder.decode(this.buffer.subarray(cursor, cursor + remLen));
-      cursor += remLen;
 
-      currentStr = currentStr.substring(0, shared) + remStr;
+      currentBytes.set(this.buffer.subarray(cursor, cursor + remLen), sharedBytes);
+      currentLen = sharedBytes + remLen;
+      cursor += remLen;
     }
 
-    if (this.stringCache.size < 5000) this.stringCache.set(targetId, currentStr);
-    return currentStr;
+    const decodedStr = decoder.decode(currentBytes.subarray(0, currentLen));
+    if (this.stringCache.size < 5000) this.stringCache.set(targetId, decodedStr);
+    return decodedStr;
   }
 
   private intersectSortedUint16(arr1: Uint16Array, arr2: Uint16Array): Uint16Array {

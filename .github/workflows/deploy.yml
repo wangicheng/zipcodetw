@@ -30,11 +30,7 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      # 執行純 TS 資料爬蟲與編譯管線 (若存在 DBF 檔則進行自動更新)
-      - name: Fetch and Build Data Files
-        run: bun run fetch:data
-
-      - name: Build Demo Site
+      - name: Build Data Files and Demo Site
         run: bun run build
 
       - name: Setup Pages

@@ -79,31 +79,29 @@ export function buildBinaryPrefixes(lines: string[]): Buffer {
     const blockLines = lines.slice(startIdx, endIdx);
 
     const blockChunks: Buffer[] = [];
-    let prevLine = '';
+    let prevBuf = Buffer.alloc(0);
 
     for (let i = 0; i < blockLines.length; i++) {
-      const line = blockLines[i];
+      const lineBuf = Buffer.from(blockLines[i], 'utf-8');
       if (i === 0) {
-        const anchorBuf = Buffer.from(line, 'utf-8');
         const lenBuf = Buffer.alloc(2);
-        lenBuf.writeUint16LE(anchorBuf.length, 0);
-        blockChunks.push(lenBuf, anchorBuf);
-        prevLine = line;
+        lenBuf.writeUint16LE(lineBuf.length, 0);
+        blockChunks.push(lenBuf, lineBuf);
+        prevBuf = lineBuf;
       } else {
-        let shared = 0;
-        const minLen = Math.min(prevLine.length, line.length);
-        while (shared < minLen && prevLine[shared] === line[shared]) {
-          shared++;
+        let sharedBytes = 0;
+        const minLen = Math.min(prevBuf.length, lineBuf.length);
+        while (sharedBytes < minLen && prevBuf[sharedBytes] === lineBuf[sharedBytes]) {
+          sharedBytes++;
         }
-        const remainder = line.slice(shared);
-        const remBuf = Buffer.from(remainder, 'utf-8');
+        const remBuf = lineBuf.subarray(sharedBytes);
 
         const headBuf = Buffer.alloc(2);
-        headBuf.writeUint8(shared, 0);
+        headBuf.writeUint8(sharedBytes, 0);
         headBuf.writeUint8(remBuf.length, 1);
 
         blockChunks.push(headBuf, remBuf);
-        prevLine = line;
+        prevBuf = lineBuf;
       }
     }
 
