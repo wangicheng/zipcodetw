@@ -6,7 +6,7 @@
   "scripts": {
     "format": "oxfmt",
     "build:data": "bun --cwd packages/zipcodetw scripts/build_data_files.ts",
-    "build": "bun build:data && bun --cwd packages/demo build",
+    "build": "bun --cwd packages/demo build",
     "dev": "bun --cwd packages/demo dev",
     "test": "bun --cwd packages/zipcodetw test",
     "bench": "bun --cwd packages/zipcodetw benchmarks/latency_distribution.ts",

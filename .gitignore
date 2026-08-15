@@ -33,9 +33,12 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Finder (MacOS) folder config
 .DS_Store
 
-# zipcode raw data & generated assets
-packages/zipcodetw/data/**
+# zipcode raw data & temporary archives (track compiled .bin assets)
+*.dbf
+*.rar
 **/DBF/downloads/
+**/DBF/extracted/
+packages/zipcodetw/data/*.dbf
 
 # demo public assets (generated)
 packages/demo/public/index.js

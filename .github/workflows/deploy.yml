@@ -1,6 +1,9 @@
 name: Deploy Demo to GitHub Pages
 
 on:
+  push:
+    branches:
+      - main
   schedule:
     - cron: '0 0 1,15 * *' # Run on the 1st and 15th of every month at midnight UTC
   workflow_dispatch:
@@ -30,7 +33,7 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      - name: Build Data Files and Demo Site
+      - name: Build Demo Site
         run: bun run build
 
       - name: Setup Pages
