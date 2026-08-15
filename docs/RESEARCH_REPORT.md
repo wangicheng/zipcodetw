@@ -29,7 +29,7 @@
       'content-type': 'application/x-www-form-urlencoded',
     },
     referrer: 'https://www.post.gov.tw/post/internet/Postal/index.jsp?ID=208',
-    body: 'list=5&list_type=2&firstView=4&firstView2=1&city2_zip6=%E8%87%BA%E5%8C%97%E5%B8%82&cityarea2_zip6=%25&road_zip6=&sec_zip6=%25&Submit=%E6%9F%A5%E8%A9%A2',
+    body: 'list=5&list_type=2&firstView=4&firstView2=1&city2_zip6=臺北市&cityarea2_zip6=%&road_zip6=&sec_zip6=%&Submit=查詢',
     method: 'POST',
   });
   ```
@@ -204,7 +204,7 @@ ZipCodeTw 於編譯時期為全台門牌前綴中出現過的 **1,807 個 Unicod
 
 全台 79,876 筆門牌規則編譯為 1.33 MB 二進位檔（`zipcode_rules.bin`）：
 
-- **32 位元組標頭 (`ZPR1`)**：定義郵遞區號字典、大宗戶名稱池與規則索引表偏移。
+- **48 位元組標頭 (`ZPR2`)**：定義魔術數字、格式版本號、8 位元組 `Data Version` 資料版本標籤（例如 `'2026.03'`）、郵遞區號字典、大宗戶名稱池與規則索引表偏移。
 - **10 位元組定長索引表**：每筆規則固定佔用 10 位元組（`part1Index: uint16`, `zipcodeId: uint16`, `bulkNameId: uint16`, `ruleStreamOffset: uint32`），可經由 $O(1)$ 指標移位讀取。
 - **2 位元組控制標頭**：
   - `標頭位元組 1`：使用位元遮罩標示數值、最小值、最大值、奇偶性 (`parity`: 0=無, 1=單, 2=雙, 3=連) 與子號模式 (`subMode`: 0=無, 1=all, 2=sub_all)。
@@ -215,9 +215,9 @@ ZipCodeTw 於編譯時期為全台門牌前綴中出現過的 **1,807 個 Unicod
 
 用於套件發布前的資料擷取與資產編譯：
 
-- 實作 [fetch_official_dbf.ts](../packages/zipcodetw/scripts/crawler/fetch_official_dbf.ts)，下載中華郵政官方 RAR 檔並解壓縮 (`node-unrar-js`)。
-- 使用 Node/Bun 原生 `TextDecoder('big5')` 與 `DBFReaderTS` 解析 `rall1.dbf`。
-- 解析門牌規則並編譯輸出二進位資產（`address_prefixes.bin` 與 `zipcode_rules.bin`），於套件發布時打包最新資料。
+- 實作純 TypeScript 資料編譯管線（[build_data_files.ts](../packages/zipcodetw/scripts/build_data_files.ts)），支援直接傳入中華郵政官方發布之 `rall1.dbf`。
+- 使用 Node/Bun 原生 `TextDecoder('big5')` 與 `DBFReaderTS` 解析 `rall1.dbf`，具備 100% 跨平台確定性。
+- 解析門牌規則並編譯輸出二進位資產（`address_prefixes.bin` 與 `zipcode_rules.bin`），並隨 NPM 套件直接打包預編譯資產。
 
 ---
 

@@ -119,6 +119,20 @@ static parseCityDistrict(address: string): {
 
 ### 實體查詢方法
 
+#### `instance.getDataVersion()`
+
+取得底層二進制資料庫的發布版本識別標籤（例如 `"2026.03"`）。
+
+```typescript
+public getDataVersion(): string
+```
+
+- **回傳值**：`string`（若為舊版無標籤之二進位檔則回傳 `"legacy"`）。
+- **範例**：
+  ```typescript
+  console.log(zipCodeTw.getDataVersion()); // "2026.03"
+  ```
+
 #### `instance.search(address, threshold?)`
 
 對門牌地址進行二進位位元指標交集與模糊比對，回傳精確的 6 碼與 3 碼郵遞區號。

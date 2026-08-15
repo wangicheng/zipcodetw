@@ -25,11 +25,16 @@ const init = async () => {
     const zipCodeTw = await ZipCodeTw.create('./data/address_prefixes.bin', './data/zipcode_rules.bin');
     console.timeEnd('Init ZipCodeTw Engine');
 
+    const dataVersion = zipCodeTw.getDataVersion();
+
     container.innerHTML = `
       <div class="header">
         <div>
           <h1>ZipCodeTw 郵遞區號查詢</h1>
-          <p style="margin: 4px 0 0 0; opacity: 0.8; font-size: 0.9rem;">台灣現代化 3+3 郵遞區號極速解析 JS SDK</p>
+          <p style="margin: 4px 0 0 0; opacity: 0.8; font-size: 0.9rem;">
+            台灣現代化 3+3 郵遞區號極速解析 JS SDK
+            <span style="display: inline-block; margin-left: 8px; padding: 2px 8px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 12px; font-size: 0.75rem; color: #60a5fa;">資料版本: ${dataVersion || '官方最新'}</span>
+          </p>
         </div>
         <a href="https://github.com/wangicheng/zipcodetw" target="_blank" class="github-link">GitHub 專案</a>
       </div>

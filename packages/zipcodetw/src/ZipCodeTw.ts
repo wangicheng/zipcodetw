@@ -87,6 +87,13 @@ export class ZipCodeTw {
   }
 
   /**
+   * Get the version identifier of the underlying postal database (e.g. "2026.03")
+   */
+  public getDataVersion(): string {
+    return this.service.getDataVersion();
+  }
+
+  /**
    * Search for a zipcode by address.
    * @param address Full address string (e.g. "台北市大安區和平東路三段")
    * @param threshold Max results to return (default: 1000)

@@ -2,6 +2,8 @@ export class BinaryPrefixSearchEngine {
   private buffer: Uint8Array;
   private view: DataView;
 
+  public readonly formatVersion: number;
+  public readonly dataVersion: string;
   public readonly stringCount: number;
   public readonly charCount: number;
   public readonly blockSize: number;
@@ -14,26 +16,46 @@ export class BinaryPrefixSearchEngine {
 
   constructor(arrayBuffer: ArrayBuffer | Uint8Array) {
     if (arrayBuffer instanceof Uint8Array) {
-      this.buffer = arrayBuffer;
+      if (arrayBuffer.byteOffset % 2 !== 0) {
+        this.buffer = new Uint8Array(arrayBuffer.slice().buffer);
+      } else {
+        this.buffer = arrayBuffer;
+      }
     } else {
       this.buffer = new Uint8Array(arrayBuffer);
     }
     this.view = new DataView(this.buffer.buffer, this.buffer.byteOffset, this.buffer.byteLength);
 
     const magic = String.fromCharCode(this.buffer[0]!, this.buffer[1]!, this.buffer[2]!, this.buffer[3]!);
-    if (magic !== 'ZPF1') {
+    if (magic === 'ZPF2') {
+      this.formatVersion = this.view.getUint16(4, true);
+      const versionBytes = this.buffer.subarray(6, 14);
+      this.dataVersion = new TextDecoder('ascii').decode(versionBytes).replaceAll('\0', '').trim();
+
+      this.stringCount = this.view.getUint32(14, true);
+      this.charCount = this.view.getUint16(18, true);
+      this.blockSize = this.view.getUint16(20, true);
+      this.blockCount = this.view.getUint16(22, true);
+
+      this.charMapOffset = this.view.getUint32(24, true);
+      this.postingStreamOffset = this.view.getUint32(28, true);
+      this.blockIndexOffset = this.view.getUint32(32, true);
+      this.textStreamOffset = this.view.getUint32(36, true);
+    } else if (magic === 'ZPF1') {
+      this.formatVersion = 1;
+      this.dataVersion = 'legacy';
+      this.stringCount = this.view.getUint32(6, true);
+      this.charCount = this.view.getUint16(10, true);
+      this.blockSize = this.view.getUint16(12, true);
+      this.blockCount = this.view.getUint16(14, true);
+
+      this.charMapOffset = this.view.getUint32(16, true);
+      this.postingStreamOffset = this.view.getUint32(20, true);
+      this.blockIndexOffset = this.view.getUint32(24, true);
+      this.textStreamOffset = this.view.getUint32(28, true);
+    } else {
       throw new Error(`Invalid binary prefixes magic header: ${magic}`);
     }
-
-    this.stringCount = this.view.getUint32(6, true);
-    this.charCount = this.view.getUint16(10, true);
-    this.blockSize = this.view.getUint16(12, true);
-    this.blockCount = this.view.getUint16(14, true);
-
-    this.charMapOffset = this.view.getUint32(16, true);
-    this.postingStreamOffset = this.view.getUint32(20, true);
-    this.blockIndexOffset = this.view.getUint32(24, true);
-    this.textStreamOffset = this.view.getUint32(28, true);
   }
 
   /**

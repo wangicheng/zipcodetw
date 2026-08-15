@@ -39,4 +39,31 @@ describe('BinaryRuleStore & ZipCodeTw Binary Engine Tests', () => {
       expect(results[0].zipcode.length).toBe(6);
     }
   });
+
+  test('buildBinaryPrefixes and buildBinaryRules correctly embed and read dataVersion', () => {
+    const { buildBinaryPrefixes, buildBinaryRules } = require('../src/compiler/binaryEncoders.ts');
+    const { BinaryPrefixSearchEngine } = require('../src/core/BinaryPrefixSearchEngine.ts');
+
+    const prefixBuf = buildBinaryPrefixes(['臺北市中正區重慶南路一段'], '2026.03');
+    const engine = new BinaryPrefixSearchEngine(prefixBuf);
+    expect(engine.formatVersion).toBe(2);
+    expect(engine.dataVersion).toBe('2026.03');
+
+    const ruleBuf = buildBinaryRules(
+      [
+        {
+          id: 0,
+          part1Index: 0,
+          zipcode: '100001',
+          rules: [{ unit: '號', value: [1] }],
+          range: '',
+          bulkName: '',
+        },
+      ],
+      '2026.03',
+    );
+    const store = new BinaryRuleStore(ruleBuf);
+    expect(store.formatVersion).toBe(2);
+    expect(store.getDataVersion()).toBe('2026.03');
+  });
 });

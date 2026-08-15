@@ -31,7 +31,8 @@ export class BinaryRuleStore {
   private view: DataView;
 
   // Header info
-  public readonly version: number;
+  public readonly formatVersion: number;
+  public readonly dataVersion: string;
   public readonly zipcodeCount: number;
   public readonly entryCount: number;
   public readonly bulkNameCount: number;
@@ -47,30 +48,51 @@ export class BinaryRuleStore {
 
   constructor(arrayBuffer: ArrayBuffer | Uint8Array) {
     if (arrayBuffer instanceof Uint8Array) {
-      this.buffer = arrayBuffer;
+      if (arrayBuffer.byteOffset % 2 !== 0) {
+        this.buffer = new Uint8Array(arrayBuffer.slice().buffer);
+      } else {
+        this.buffer = arrayBuffer;
+      }
     } else {
       this.buffer = new Uint8Array(arrayBuffer);
     }
     this.view = new DataView(this.buffer.buffer, this.buffer.byteOffset, this.buffer.byteLength);
 
-    // Validate Magic "ZPR1"
     const magic = String.fromCharCode(this.buffer[0], this.buffer[1], this.buffer[2], this.buffer[3]);
-    if (magic !== 'ZPR1') {
+    if (magic === 'ZPR2') {
+      this.formatVersion = this.view.getUint16(4, true);
+      const versionBytes = this.buffer.subarray(6, 14);
+      this.dataVersion = new TextDecoder('ascii').decode(versionBytes).replaceAll('\0', '').trim();
+
+      this.zipcodeCount = this.view.getUint16(14, true);
+      this.entryCount = this.view.getUint32(16, true);
+      this.bulkNameCount = this.view.getUint32(20, true);
+
+      this.zipDictOffset = this.view.getUint32(24, true);
+      this.bulkDictOffset = this.view.getUint32(28, true);
+      this.indexTableOffset = this.view.getUint32(32, true);
+      this.ruleStreamOffset = this.view.getUint32(36, true);
+    } else if (magic === 'ZPR1') {
+      this.formatVersion = 1;
+      this.dataVersion = 'legacy';
+      this.zipcodeCount = this.view.getUint16(6, true);
+      this.entryCount = this.view.getUint32(8, true);
+      this.bulkNameCount = this.view.getUint32(12, true);
+
+      this.zipDictOffset = this.view.getUint32(16, true);
+      this.bulkDictOffset = this.view.getUint32(20, true);
+      this.indexTableOffset = this.view.getUint32(24, true);
+      this.ruleStreamOffset = this.view.getUint32(28, true);
+    } else {
       throw new Error(`Invalid binary rules magic header: ${magic}`);
     }
 
-    this.version = this.view.getUint16(4, true);
-    this.zipcodeCount = this.view.getUint16(6, true);
-    this.entryCount = this.view.getUint32(8, true);
-    this.bulkNameCount = this.view.getUint32(12, true);
-
-    this.zipDictOffset = this.view.getUint32(16, true);
-    this.bulkDictOffset = this.view.getUint32(20, true);
-    this.indexTableOffset = this.view.getUint32(24, true);
-    this.ruleStreamOffset = this.view.getUint32(28, true);
-
     this.parseZipcodeDict();
     this.parseBulkNameDict();
+  }
+
+  public getDataVersion(): string {
+    return this.dataVersion;
   }
 
   private parseZipcodeDict(): void {

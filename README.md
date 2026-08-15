@@ -55,6 +55,8 @@ import { ZipCodeTw } from 'zipcodetw';
 // 載入二進位資產檔 (極小 783 KB Brotli 傳輸)
 const zipCodeTw = await ZipCodeTw.create('/data/address_prefixes.bin', '/data/zipcode_rules.bin');
 
+console.log(zipCodeTw.getDataVersion()); // "2026.03" (官方資料庫版本)
+
 const matches = zipCodeTw.search('台北市大安區和平東路三段1號');
 console.log(matches[0].zipcode); // "106008" (6 碼郵遞區號)
 console.log(matches[0].zipcode3); // "106"    (3 碼郵遞區號)
@@ -65,8 +67,10 @@ console.log(matches[0].zipcode3); // "106"    (3 碼郵遞區號)
 ```typescript
 import { createZipCodeTw } from 'zipcodetw/node';
 
-// 自動尋找並讀取本地二進位資產 (零記憶體展開)
+// 自動尋找並讀取套件內附的二進位資產 (零網路請求、零記憶體展開)
 const zipCodeTw = await createZipCodeTw();
+console.log(zipCodeTw.getDataVersion()); // "2026.03"
+
 const matches = zipCodeTw.search('新竹市東區科學園區力行路');
 console.log(matches[0].zipcode); // "300096"
 ```
@@ -144,12 +148,12 @@ zipcodetw/
 
 ## 開發與建置指令
 
-| 指令                 | 說明                                                           |
-| -------------------- | -------------------------------------------------------------- |
-| `bun run build:data` | 建置核心資料：自動下載中華郵政最新官方開放資料並編譯為二進制檔 |
-| `bun test`           | 執行核心單元測試 (包含 Parser、搜尋邏輯與解碼驗證)             |
-| `bun run dev`        | 在 `packages/demo` 啟動靜態展示網頁開發伺服器                  |
-| `bun run build`      | 完整建置核心資料資產與 Demo 靜態網站                           |
+| 指令                 | 說明                                                                                      |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| `bun run build:data` | 建置核心資料：讀取中華郵政官方 `rall1.dbf` 並編譯為二進制檔 (支援 `--dbf` 與 `--version`) |
+| `bun test`           | 執行核心單元測試 (包含 Parser、搜尋邏輯、版本標頭與解碼驗證)                              |
+| `bun run dev`        | 在 `packages/demo` 啟動靜態展示網頁開發伺服器                                             |
+| `bun run build`      | 完整建置核心資料資產與 Demo 靜態網站                                                      |
 
 ---
 

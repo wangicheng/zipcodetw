@@ -30,6 +30,10 @@ export class AddressQueryService {
     }
   }
 
+  public getDataVersion(): string {
+    return this.binaryStore.getDataVersion();
+  }
+
   public search(searchInput: string, threshold: number = 1000): SearchMatch[] {
     const normalizedInput = this.normalizer.normalize(searchInput);
     const allMatches: SearchMatch[] = [];

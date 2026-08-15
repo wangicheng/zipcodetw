@@ -28,7 +28,7 @@ export const SUB_MODE_MAP: Record<string, number> = {
   sub_all: 2,
 };
 
-export function buildBinaryPrefixes(lines: string[]): Buffer {
+export function buildBinaryPrefixes(lines: string[], dataVersion: string = '2026.03'): Buffer {
   const tempIndex = new Map<string, number[]>();
   for (let id = 0; id < lines.length; id++) {
     const line = lines[id];
@@ -118,15 +118,16 @@ export function buildBinaryPrefixes(lines: string[]): Buffer {
 
   const fullTextStreamBuf = Buffer.concat(blockTextBufs);
 
-  const headerBuf = Buffer.alloc(32);
-  headerBuf.write('ZPF1', 0, 4, 'ascii');
-  headerBuf.writeUint16LE(1, 4);
-  headerBuf.writeUint32LE(lines.length, 6);
-  headerBuf.writeUint16LE(sortedChars.length, 10);
-  headerBuf.writeUint16LE(BLOCK_SIZE, 12);
-  headerBuf.writeUint16LE(blockCount, 14);
+  const headerBuf = Buffer.alloc(48);
+  headerBuf.write('ZPF2', 0, 4, 'ascii');
+  headerBuf.writeUint16LE(2, 4);
+  headerBuf.write(dataVersion.padEnd(8, '\0').slice(0, 8), 6, 8, 'ascii');
+  headerBuf.writeUint32LE(lines.length, 14);
+  headerBuf.writeUint16LE(sortedChars.length, 18);
+  headerBuf.writeUint16LE(BLOCK_SIZE, 20);
+  headerBuf.writeUint16LE(blockCount, 22);
 
-  let cursor = 32;
+  let cursor = 48;
   const charMapOffset = cursor;
   cursor += charMapBuf.length;
 
@@ -138,15 +139,15 @@ export function buildBinaryPrefixes(lines: string[]): Buffer {
 
   const textStreamOffset = cursor;
 
-  headerBuf.writeUint32LE(charMapOffset, 16);
-  headerBuf.writeUint32LE(postingStreamOffset, 20);
-  headerBuf.writeUint32LE(blockIndexOffset, 24);
-  headerBuf.writeUint32LE(textStreamOffset, 28);
+  headerBuf.writeUint32LE(charMapOffset, 24);
+  headerBuf.writeUint32LE(postingStreamOffset, 28);
+  headerBuf.writeUint32LE(blockIndexOffset, 32);
+  headerBuf.writeUint32LE(textStreamOffset, 36);
 
   return Buffer.concat([headerBuf, charMapBuf, fullPostingStreamBuf, blockIndexBuf, fullTextStreamBuf]);
 }
 
-export function buildBinaryRules(part2Entries: Part2Entry[]): Buffer {
+export function buildBinaryRules(part2Entries: Part2Entry[], dataVersion: string = '2026.03'): Buffer {
   const zipcodeSet = new Set<string>();
   const bulkNameSet = new Set<string>();
 
@@ -198,26 +199,27 @@ export function buildBinaryRules(part2Entries: Part2Entry[]): Buffer {
       const hasValue = !!(rule.value && rule.value.length > 0);
       const hasMin = !!(rule.min && rule.min.length > 0);
       const hasMax = !!(rule.max && rule.max.length > 0);
-      const parityVal = rule.parity ? PARITY_MAP[rule.parity] || 0 : 0;
-      const subModeVal = rule.subMode ? SUB_MODE_MAP[rule.subMode] || 0 : 0;
-      const unitVal = rule.unit ? UNIT_MAP[rule.unit] || 0 : 0;
-      const endUnitVal = rule.endUnit ? END_UNIT_MAP[rule.endUnit] || 0 : 0;
 
-      let ctrl1 = 0;
-      if (hasValue) ctrl1 |= 1 << 0;
-      if (hasMin) ctrl1 |= 1 << 1;
-      if (hasMax) ctrl1 |= 1 << 2;
-      ctrl1 |= (parityVal & 0x03) << 3;
-      ctrl1 |= (subModeVal & 0x03) << 5;
+      const parityCode = PARITY_MAP[rule.parity || ''] || 0;
+      const subModeCode = SUB_MODE_MAP[rule.subMode || ''] || 0;
+      const unitCode = UNIT_MAP[rule.unit || ''] || 0;
+      const endUnitCode = END_UNIT_MAP[rule.endUnit || ''] || 0;
 
-      let ctrl2 = 0;
-      ctrl2 |= unitVal & 0x0f;
-      ctrl2 |= (endUnitVal & 0x0f) << 4;
+      let byte1 = 0;
+      if (hasValue) byte1 |= 0x01;
+      if (hasMin) byte1 |= 0x02;
+      if (hasMax) byte1 |= 0x04;
+      byte1 |= (parityCode & 0x03) << 3;
+      byte1 |= (subModeCode & 0x03) << 5;
 
-      const ctrlBuf = Buffer.alloc(2);
-      ctrlBuf.writeUint8(ctrl1, 0);
-      ctrlBuf.writeUint8(ctrl2, 1);
-      entryChunks.push(ctrlBuf);
+      let byte2 = 0;
+      byte2 |= unitCode & 0x0f;
+      byte2 |= (endUnitCode & 0x0f) << 4;
+
+      const flagBuf = Buffer.alloc(2);
+      flagBuf.writeUint8(byte1, 0);
+      flagBuf.writeUint8(byte2, 1);
+      entryChunks.push(flagBuf);
 
       if (hasValue) {
         const valArr = rule.value!;
@@ -270,14 +272,15 @@ export function buildBinaryRules(part2Entries: Part2Entry[]): Buffer {
     indexTableBuf.writeUint32LE(offset, pos + 6);
   }
 
-  const headerBuf = Buffer.alloc(32);
-  headerBuf.write('ZPR1', 0, 4, 'ascii');
-  headerBuf.writeUint16LE(1, 4);
-  headerBuf.writeUint16LE(zipcodeList.length, 6);
-  headerBuf.writeUint32LE(part2Entries.length, 8);
-  headerBuf.writeUint32LE(bulkNameList.length, 12);
+  const headerBuf = Buffer.alloc(48);
+  headerBuf.write('ZPR2', 0, 4, 'ascii');
+  headerBuf.writeUint16LE(2, 4);
+  headerBuf.write(dataVersion.padEnd(8, '\0').slice(0, 8), 6, 8, 'ascii');
+  headerBuf.writeUint16LE(zipcodeList.length, 14);
+  headerBuf.writeUint32LE(part2Entries.length, 16);
+  headerBuf.writeUint32LE(bulkNameList.length, 20);
 
-  let offsetCursor = 32;
+  let offsetCursor = 48;
   const zipDictOffset = offsetCursor;
   offsetCursor += zipDictBuf.length;
 
@@ -289,10 +292,10 @@ export function buildBinaryRules(part2Entries: Part2Entry[]): Buffer {
 
   const ruleStreamOffset = offsetCursor;
 
-  headerBuf.writeUint32LE(zipDictOffset, 16);
-  headerBuf.writeUint32LE(bulkDictOffset, 20);
-  headerBuf.writeUint32LE(indexTableOffset, 24);
-  headerBuf.writeUint32LE(ruleStreamOffset, 28);
+  headerBuf.writeUint32LE(zipDictOffset, 24);
+  headerBuf.writeUint32LE(bulkDictOffset, 28);
+  headerBuf.writeUint32LE(indexTableOffset, 32);
+  headerBuf.writeUint32LE(ruleStreamOffset, 36);
 
   return Buffer.concat([headerBuf, zipDictBuf, bulkDictBuf, indexTableBuf, fullRuleStreamBuf]);
 }

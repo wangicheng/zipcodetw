@@ -23,7 +23,7 @@ ZipCodeTw 採用**全二進制零展開**設計：將全量門牌與投遞規則
 ```text
                   [ 中華郵政 rall1.dbf (34.99 MB / 去英 26.20 MB) ]
                                   │
-                                  ▼ (fetch_official_dbf.ts)
+                                  ▼ (build_data_files.ts / dbfReader.ts)
                       [ 純記憶體 Big5 DBF Reader ]
                                   │
                                   ▼
@@ -38,7 +38,8 @@ ZipCodeTw 採用**全二進制零展開**設計：將全量門牌與投遞規則
         │     address_prefixes.bin      │   │       zipcode_rules.bin       │
         │           (1.24 MB)           │   │           (1.33 MB)           │
         ├───────────────────────────────┤   ├───────────────────────────────┤
-        │ 1. 標頭 Header (16 bytes)     │   │ 1. 標頭 ZPR1 Header (32 bytes)│
+        │ 1. 標頭 ZPF2 Header (48 bytes)│   │ 1. 標頭 ZPR2 Header (48 bytes)│
+        │    (含 8-byte Data Version)   │   │    (含 8-byte Data Version)   │
         │ 2. 區塊索引表 (Block Index)   │   │ 2. 郵遞區號與大宗戶字典串流   │
         │ 3. Front-Coded 位元組串流     │   │ 3. 10-byte 定長規則索引表     │
         │ 4. 倒排字元表 (Char Map)      │   │ 4. 位元遮罩變長規則控制串流   │
@@ -69,7 +70,7 @@ ZipCodeTw 採用**全二進制零展開**設計：將全量門牌與投遞規則
 
 #### A. 檔案標頭與定長區塊索引表
 
-- **Header (16 位元組)**：包含魔術數字、版本號、門牌前綴總數 $N = 44,658$、區塊大小 $K = 64$ 及各區域位元組偏移量。
+- **Header (48 位元組，`ZPF2`)**：包含魔術數字 `ZPF2`、格式版本號 `2`、資料版本標籤 `Data Version`（8 位元組 ASCII，例如 `'2026.03'`）、門牌前綴總數 $N = 44,658$、區塊大小 $K = 64$ 及各區域位元組偏移量。
 - **Block Index Table**：每區塊固定佔用 8 位元組（`relTextOffset: uint32`, `blockLen: uint16`, `reserved: uint16`）。
 
 #### B. 區塊化前綴編碼字串串流
@@ -91,9 +92,9 @@ ZipCodeTw 採用**全二進制零展開**設計：將全量門牌與投遞規則
 
 全檔體積 1.33 MB，包含 79,876 筆複雜投遞規則：
 
-#### A. 標頭 (32 位元組)
+#### A. 標頭 (48 位元組，`ZPR2`)
 
-包含資產標識符 `ZPR1`、規則總數 (79,876 筆)、Part 1 前綴對照數及 ZipCode / BulkName 字典偏移量。
+包含資產標識符 `ZPR2`、格式版本號 `2`、資料版本標籤 `Data Version`（8 位元組 ASCII，例如 `'2026.03'`）、規則總數 (79,876 筆)、Part 1 前綴對照數及 ZipCode / BulkName 字典偏移量。
 
 #### B. 10 位元組定長規則索引表
 
