@@ -1,4 +1,4 @@
-import type { AddressRule, Part2Entry } from '../../src/core/types.ts';
+import type { AddressRule, Part2Entry } from '../core/types.ts';
 
 export const BLOCK_SIZE = 64;
 

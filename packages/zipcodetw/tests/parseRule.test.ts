@@ -1,7 +1,7 @@
 import { describe, test } from 'bun:test';
 import assert from 'node:assert';
 
-import { parseAddress } from '../scripts/utils/parseRule.ts';
+import { parseAddress } from '../src/compiler/parseRule.ts';
 import type { AddressRule } from '../src/core/types.ts';
 
 const testCases: { input: string; expected: AddressRule[] }[] = [

@@ -5,10 +5,9 @@ import path from 'node:path';
 
 import { createExtractorFromFile } from 'node-unrar-js';
 
+import { buildBinaryPrefixes, buildBinaryRules } from '../../src/compiler/binaryEncoders.ts';
+import { parseAddress } from '../../src/compiler/parseRule.ts';
 import { ADDRESS_PREFIXES_PATH, ZIPCODE_RULES_PATH } from '../../src/core/constants.ts';
-import type { AddressRule, Part2Entry, RawAddress } from '../../src/core/types.ts';
-import { buildBinaryPrefixes, buildBinaryRules } from '../utils/binaryEncoders.ts';
-import { parseAddress } from '../utils/parseRule.ts';
 
 export interface DBFField {
   name: string;
@@ -198,18 +197,18 @@ export async function findFileByExtRecursively(dirPath: string, extLower: string
   return null;
 }
 
-export async function parseDbfAndCompile(dbfPath: string): Promise<void> {
-  console.log(`[INFO] 使用 DBF 檔案: ${dbfPath}`);
-  console.log(`[INFO] 正在解析 3+3 郵遞區號門牌對照檔...`);
+export async function loadOfficialRawAddresses(dbfPath?: string): Promise<RawAddress[]> {
+  const targetPath = dbfPath || findLocalDBF();
+  if (!targetPath) {
+    throw new Error('找不到可用的中華郵政 rall1.dbf 檔案');
+  }
 
-  const fileBuf = await fs.readFile(dbfPath);
+  const fileBuf = await fs.readFile(targetPath);
   const reader = new DBFReaderTS();
   await reader.parseHeader(fileBuf);
-
   const records = reader.fetchRecords(fileBuf);
-  console.log(`[INFO] 解析完成！成功讀取 ${records.length.toLocaleString()} 筆有效門牌對照紀錄。`);
 
-  const rawAddresses: RawAddress[] = records.map((r) => {
+  return records.map((r) => {
     const [roadName, section] = splitRoadAndSection(r.ROAD || '');
     return {
       city: r.CITY || '',
@@ -221,6 +220,14 @@ export async function parseDbfAndCompile(dbfPath: string): Promise<void> {
       zipcode: r.ZIPCODE || '',
     };
   });
+}
+
+export async function parseDbfAndCompile(dbfPath: string): Promise<void> {
+  console.log(`[INFO] 使用 DBF 檔案: ${dbfPath}`);
+  console.log(`[INFO] 正在解析 3+3 郵遞區號門牌對照檔...`);
+
+  const rawAddresses = await loadOfficialRawAddresses(dbfPath);
+  console.log(`[INFO] 解析完成！成功讀取 ${rawAddresses.length.toLocaleString()} 筆有效門牌對照紀錄。`);
 
   await compileBinaryAssets(rawAddresses);
 }

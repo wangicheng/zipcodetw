@@ -8,7 +8,12 @@
     "build:data": "bun --cwd packages/zipcodetw scripts/build_data_files.ts",
     "build": "bun build:data && bun --cwd packages/demo build",
     "dev": "bun --cwd packages/demo dev",
-    "test": "bun --cwd packages/zipcodetw test"
+    "test": "bun --cwd packages/zipcodetw test",
+    "bench": "bun --cwd packages/zipcodetw benchmarks/latency_distribution.ts",
+    "bench:memory": "bun --cwd packages/zipcodetw benchmarks/memory_profile.ts",
+    "bench:sensitivity": "bun --cwd packages/zipcodetw benchmarks/sensitivity_analysis.ts",
+    "bench:ablation": "bun --cwd packages/zipcodetw benchmarks/fc_bytes_ablation.ts",
+    "bench:web": "bun --cwd packages/zipcodetw benchmarks/official_web.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

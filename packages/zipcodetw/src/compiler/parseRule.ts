@@ -1,6 +1,6 @@
 import { CstParser, createToken, Lexer } from 'chevrotain';
 
-import type { AddressRule } from '../../src/core/types.ts';
+import type { AddressRule } from '../core/types.ts';
 
 // ==========================================
 // 1. Data Structure Definitions
