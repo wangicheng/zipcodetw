@@ -63,7 +63,7 @@ async function main() {
 
   console.log('【2. 效能與記憶體數據 (Performance Metrics)】');
   console.log(`  - 引擎載入與預處理耗時 (Load Time)  : ${(endLoad - startLoad).toFixed(2)} ms`);
-  console.log(`  - V8 Heap 堆記憶體淨增長 (Heap Delta): ${formatMB(heapDelta)}`);
+  console.log(`  - 堆記憶體淨增長 (Heap Delta)        : ${formatMB(heapDelta)}`);
   console.log(`  - 進程總記憶體淨增長 (RSS Delta)    : ${formatMB(rssDelta)}`);
   console.log(`  - 10,000 次查詢總耗時 (Total Time)  : ${(searchEnd - searchStart).toFixed(2)} ms`);
   console.log(

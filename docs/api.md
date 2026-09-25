@@ -258,7 +258,7 @@ export interface AddressRule {
 
 ## 進階擴充介面
 
-`zipcodetw` 允許開發者透過依賴注入 (Dependency Injection) 自訂地址正規化與結果排序邏輯。
+`zipcodetw` 允許開發者自訂地址正規化與結果排序邏輯。
 
 ### `AddressNormalizer` 正規化介面
 

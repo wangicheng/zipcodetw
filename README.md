@@ -29,9 +29,9 @@
 
 - **極致效能與零冷啟動**：
   - **Block-Based Front Coding**：將全台門牌前綴壓縮至極小二進位檔，具備 $O(1)$ 定點隨機存取能力。
-  - **零展開檢索**：查詢時僅針對 1~3 條候選 ID 進行惰性解碼，V8 Heap 堆記憶體淨增長 **0.00 MB**，冷啟動響應耗時僅 **12 ms (-95%)**。
+  - **零展開檢索**：查詢時僅針對符合條件的候選前綴 ID 進行惰性解碼，大幅降低記憶體開銷，冷啟動響應耗時僅 **12 ms (-95%)**。
 - **全平臺與 100% 離線相容**：
-  - 支援 **Browser** (純前端離線查詢，Brotli 傳輸體積僅 783 KB)、**Server** (Node.js/Bun) 與 **Edge** (Cloudflare Workers / AWS Lambda@Edge)。
+  - 支援前端瀏覽器（離線查詢，Brotli 傳輸體積僅 783 KB）、後端伺服器（Node.js / Bun）與邊緣運算（Cloudflare Workers / AWS Lambda@Edge）。
 - **複雜門牌規則解析**：
   - 內建基於 **Chevrotain** 的門牌規則語法分析器，精確解析中華郵政 79,876 筆複雜投遞條件（單雙號、起訖範圍、地下樓層、含附號等）。
 
@@ -47,7 +47,7 @@ bun add zipcodetw
 npm install zipcodetw
 ```
 
-### 2. 瀏覽器端 (Browser)
+### 2. 瀏覽器端
 
 ```typescript
 import { ZipCodeTw } from 'zipcodetw';
@@ -62,7 +62,7 @@ console.log(matches[0].zipcode); // "106008" (6 碼郵遞區號)
 console.log(matches[0].zipcode3); // "106"    (3 碼郵遞區號)
 ```
 
-### 3. 伺服器端 (Node.js / Bun)
+### 3. 伺服器端（Node.js / Bun）
 
 ```typescript
 import { createZipCodeTw } from 'zipcodetw/node';
